@@ -18,6 +18,8 @@
 #include "cpt_client.h"
 #include "linked_list.h"
 #include "cpt_response.h"
+#define CREATE_CMD "/create"
+#define JOIN_CMD   "/join"
 
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
@@ -152,26 +154,42 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             break;
         }
 
+        // Send a log in packet
+
+
         // Create a thread to listen to server's messages
         pthread_create(&thread_id, NULL, listeningThread, (void *) &sd);
 
         // An infinite loop that listens for user's keyboard and send the message
         while (TRUE) {
             // Take input from client and send it to the server
-            request->version = 3; // Version 3
-            request->cmd_code = SEND; // SEND Message
-            request->channel_id = GLOBAL_CHANNEL; // Global channel
+
             char message[MSG_MAX_LEN];
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
 
             message[message_len] = '\0';
 
+            // TODO: before serializing the packet, needs to figure out whether the input is a command
+            // or just a regular text
 
             cpt_request_msg(request, message);
 
+
+//            if (message[0] == '/')
+//            {
+//                printf("it's a command\n");
+//            }
+
+
+            write(STDOUT_FILENO, message, (size_t) message_len);
+            request->version = 3; // Version 3
+            cpt_request_cmd(request, SEND); // SEND Message
+            cpt_request_chan(request, GLOBAL_CHANNEL); // Global channel
+
             size_t size_buf = get_size_for_serialized_request_buffer(request);
             uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
+
             cpt_serialize_request(request, buff);
 
             rc = send(sd, buff, size_buf, 0);

@@ -15,8 +15,7 @@ typedef struct cpt_response {
 } CptResponse;
 
 enum server_res_code {
-    SUCCESS = 1,
-    MESSAGE,
+    MESSAGE = 8,
     USER_CONNECTED,
     USER_DISCONNECTED,
     MESSAGE_FAILED,

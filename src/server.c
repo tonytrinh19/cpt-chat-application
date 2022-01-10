@@ -227,7 +227,8 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                 close_conn = FALSE;
                 /* Receive all incoming data on this socket            */
                 /* before we loop back and call poll again.            */
-                do {
+                do
+                {
                     /* Receive data on this connection until the         */
                     /* recv fails with EWOULDBLOCK. If any other         */
                     /* failure occurs, we will close the                 */
@@ -253,13 +254,13 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                     len = rc;
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
-                    CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
+                    CptRequest *req  = cpt_parse_request((uint8_t *) buffer, len);
                     CptResponse *res = cpt_response_init();
 
                     if (req->version != 3) // current version
                     {
                         cpt_response_code(res, req, BAD_VERSION);
-                        size_buf = get_size_for_serialized_response_buffer(res);
+                        size_buf   = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
                         rc = send(fds[i].fd, res_packet, size_buf, 0);
@@ -271,39 +272,26 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         break;
                     }
 
-                    if (req->channel_id != 0) // only checks for global channel at the moment
-                    {
-                        cpt_response_code(res, req, UKNOWN_CHANNEL);
-                        size_buf = get_size_for_serialized_response_buffer(res);
-                        res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
-                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-                        if (rc < 0) {
-                            perror("  send() failed");
-                            close_conn = TRUE;
-                        }
-                        cpt_response_destroy(res);
-                        break;
-                    }
-
-                    printf("MESSAGE: %s\n", req->msg);
+//                    if (req->channel_id != 0) // only checks for global channel at the moment
+//                    {
+//                        cpt_response_code(res, req, UKNOWN_CHANNEL);
+//                        size_buf   = get_size_for_serialized_response_buffer(res);
+//                        res_packet = calloc(size_buf, sizeof(uint8_t));
+//                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+//                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+//                        if (rc < 0) {
+//                            perror("  send() failed");
+//                            close_conn = TRUE;
+//                        }
+//                        cpt_response_destroy(res);
+//                        break;
+//                    }
 
                     // If it SEND then it's good
-                    if (req->cmd_code != SEND) {
-                        cpt_response_code(res, req, UKNOWN_CMD);
-                        size_buf = get_size_for_serialized_response_buffer(res);
-                        res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, TRUE, 0, 0, 0, NULL);
-                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-                        if (rc < 0) {
-                            perror("  send() failed");
-                            close_conn = TRUE;
-                        }
-                        cpt_response_destroy(res);
-                        break;
-                    } else {
-                        cpt_response_code(res, req, SUCCESS);
-                        size_buf = get_size_for_serialized_response_buffer(res);
+                    if (req->cmd_code == SEND)
+                    {
+                        cpt_response_code(res, req, SEND);
+                        size_buf   = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
                         rc = send(fds[i].fd, res_packet, size_buf, 0);
@@ -331,6 +319,37 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 }
                                 free(res_packet);
                             }
+                        }
+                    }
+                    else if (req->cmd_code == LOGIN)
+                    {
+                        // response code has to match request cmd code
+                        // Add user to global channel users list
+                        // TODO: Create a function that handles all events so there's less code duplication
+                        cpt_response_code(res, req, LOGIN);
+                        size_buf   = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, TRUE, 0, 0, 0, NULL);
+                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+                        if (rc < 0)
+                        {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        cpt_response_code(res, req, UKNOWN_CMD);
+                        size_buf   = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, TRUE, 0, 0, 0, NULL);
+                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+                        if (rc < 0)
+                        {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                            break;
                         }
                     }
                     cpt_request_destroy(req);

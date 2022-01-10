@@ -15,15 +15,14 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_c
     response->code = res_code;
 
     switch (res_code) {
-        case SUCCESS:    // 1
+        case SEND:
         {
-            char *data = strdup(
-                    "Operation was successful\n");
+            char *data = strdup("Message sent successfully\n");
             response->data = (uint8_t *) data;
-            response->data_size = (uint16_t) strlen(data);
+            response->data_size = (uint16_t) strlen(response->data);
             break;
         }
-        case MESSAGE:    // 2
+        case MESSAGE:
         {
             char *data = strdup((char *) request->msg);
             response->data = (uint8_t *) data;
@@ -31,55 +30,55 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_c
             response->data_size = request->msg_len + 6;
             break;
         }
-        case USER_CONNECTED:    // 3
+        case USER_CONNECTED:
             response->data = (uint8_t *) strdup("User connected\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case USER_DISCONNECTED: // 4
+        case USER_DISCONNECTED:
             response->data = (uint8_t *) strdup("User is currently disconnected\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case MESSAGE_FAILED:    // 5
+        case MESSAGE_FAILED:
             response->data = (uint8_t *) strdup("Message could not be delivered\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case CHANNEL_CREATED:   // 6
+        case CHANNEL_CREATED:
             response->data = (uint8_t *) strdup("Channel created\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case CHANNEL_CREATION_ERROR:    //7
+        case CHANNEL_CREATION_ERROR:
             response->data = (uint8_t *) strdup("Channel cannot be created\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case CHANNEL_DESTROYED:    //8
+        case CHANNEL_DESTROYED:
             response->data = (uint8_t *) strdup("Channel is destroyed\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case USER_JOINED_CHANNEL:   // 9
+        case USER_JOINED_CHANNEL:
             response->data = (uint8_t *) strdup("NEW client joins the channel\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case USER_LEFT_CHANNEL:     // 10
+        case USER_LEFT_CHANNEL:
             response->data = (uint8_t *) strdup("User leaves the channel\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case USER_LIST:     // 11
+        case USER_LIST:
             response->data = (uint8_t *) strdup("Current users (Get Users)\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case UKNOWN_CMD:    // 12
+        case UKNOWN_CMD:
             response->data = (uint8_t *) strdup("Unknown command error\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case LOGIN_FAIL:    // 13
+        case LOGIN_FAIL:
             response->data = (uint8_t *) strdup("Login failed error\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case UKNOWN_CHANNEL:    // 14
+        case UKNOWN_CHANNEL:
             response->data = (uint8_t *) strdup("Unknown channel ID error\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case BAD_VERSION:    // 15
+        case BAD_VERSION:
             {
                 char *data = strdup(
                         "Bad CPT Version number error\n");
@@ -87,35 +86,35 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_c
                 response->data_size = (uint16_t) strlen(data);
                 break;
             }
-        case SEND_FAILED:   // 16
+        case SEND_FAILED:
             response->data = (uint8_t *) strdup("Message failed to send\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case CHAN_ID_OVERFLOW:  // 17
+        case CHAN_ID_OVERFLOW:
             response->data = (uint8_t *) strdup("Channel ID exceeds limit\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case MSG_OVERFLOW:  // 18
+        case MSG_OVERFLOW:
             response->data = (uint8_t *) strdup("Message size too big\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case MSG_LEN_OVERFLOW:    // 19
+        case MSG_LEN_OVERFLOW:
             response->data = (uint8_t *) strdup("Message length too big\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case CHAN_EMPTY:    // 20
+        case CHAN_EMPTY:
             response->data = (uint8_t *) strdup("No users in channel\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case INVALID_ID:    // 21
+        case INVALID_ID:
             response->data = (uint8_t *) strdup("Given ID is invalid for any reason\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case UNAUTH_ACCESS:     // 22
+        case UNAUTH_ACCESS:
             response->data = (uint8_t *) strdup("Access to resources is forbidden\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
-        case SERVER_FULL:      //23
+        case SERVER_FULL:
             response->data = (uint8_t *) strdup("Server at maximum capacity\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
@@ -204,7 +203,8 @@ CptResponse *cpt_parse_response(uint8_t *res_buf, size_t res_size) {
         cpt_res->data_size = first_half_data_size | second_half_data_size;
         cpt_res->data = malloc(cpt_res->data_size * sizeof(uint8_t));
 
-        for (int i = 0; i < cpt_res->data_size; ++i) {
+        for (int i = 0; i < cpt_res->data_size; ++i)
+        {
             cpt_res->data[i] = *(res_buf++);
         }
     }
