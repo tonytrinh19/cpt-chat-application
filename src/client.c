@@ -7,9 +7,10 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "cpt_builder.h"
 
 #define SERVER_PORT     12345
-#define BUFFER_LENGTH    250
+#define BUFFER_LENGTH    400
 #define FALSE              0
 #define SERVER_NAME     "10.65.0.209"
 
@@ -46,13 +47,11 @@ int main(int argc, char *argv[])
 
         if (rc != 1)
         {
-            /*****************************************************************/
             /* The server string that was passed into the inet_pton()        */
             /* function was not a hexidecimal colon IP address.  It must     */
             /* therefore be the hostname of the server.  Use the             */
             /* getaddrinfo() function to retrieve the IP address of the      */
             /* server.                                                       */
-            /*****************************************************************/
             memset(&hints, 0, sizeof(hints));
             hints.ai_family = AF_INET6;
             hints.ai_flags = AI_V4MAPPED;
@@ -93,19 +92,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-        /********************************************************************/
-        /* In this example we know that the server is going to respond with */
-        /* the same 250 bytes that we just sent.  Since we know that 250    */
-        /* bytes are going to be sent back to us, we can use the            */
-        /* SO_RCVLOWAT socket option and then issue a single recv() and     */
-        /* retrieve all of the data.                                        */
-        /*                                                                  */
-        /* The use of SO_RCVLOWAT is already illustrated in the server      */
-        /* side of this example, so we will do something different here.    */
-        /* The 250 bytes of the data may arrive in separate packets,        */
-        /* therefore we will issue recv() over and over again until all     */
-        /* 250 bytes have arrived.                                          */
-        /********************************************************************/
         bytesReceived = 0;
         while (bytesReceived < BUFFER_LENGTH)
         {
@@ -121,19 +107,13 @@ int main(int argc, char *argv[])
                 printf("The server closed the connection\n");
                 break;
             }
-
-            /*****************************************************************/
             /* Increment the number of bytes that have been received so far  */
-            /*****************************************************************/
             bytesReceived += rc;
         }
 
     } while (FALSE);
 
-    /***********************************************************************/
     /* Close down any open socket descriptors                              */
-    /***********************************************************************/
-    if (sd != -1)
-        close(sd);
+    if (sd != -1) close(sd);
     return EXIT_SUCCESS;
 }

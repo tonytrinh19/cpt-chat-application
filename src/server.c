@@ -8,11 +8,14 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include "cpt_builder.h"
 
 #define SERVER_PORT  12345
 
 #define TRUE             1
 #define FALSE            0
+
+
 
 int main (int argc, char *argv[])
 {
@@ -174,7 +177,6 @@ int main (int argc, char *argv[])
                     fds[nfds].fd = new_sd;
                     fds[nfds].events = POLLIN;
                     nfds++;
-
                     /* Loop back up and accept another incoming          */
                     /* connection                                        */
                 } while (new_sd != -1);
@@ -220,7 +222,6 @@ int main (int argc, char *argv[])
                     printf("  %d bytes received\n", len);
 
                     /* Echo the data back to the client                  */
-                    /*****************************************************/
                     rc = send(fds[i].fd, buffer, len, 0);
                     if (rc < 0)
                     {
