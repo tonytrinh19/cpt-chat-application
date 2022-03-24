@@ -57,7 +57,7 @@ static void cpt_request_cmd(CptRequest * cpt, uint8_t cmd);
  * @param cpt       Pointer to a cpt structure.
  * @param msg_len   An 8-bit integer.
 */
-static void cpt_request_len(CptRequest * cpt, uint8_t msg_len);
+static void cpt_request_len(CptRequest * cpt, uint16_t msg_len);
 
 /**
  * Set the channel id for the cpt header block.
