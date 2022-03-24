@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
-#include "cpt_builder.h"
 
 #define SERVER_PORT  12345
 

@@ -25,14 +25,14 @@ struct cpt_request {
 *
 * @return Pointer to cpt struct.
 */
-static CptRequest * cpt_request_init(void);
+CptRequest * cpt_request_init();
 
 /**
  * Free all memory and set fields to null.
  *
  * @param cpt   Pointer to a cpt structure.
 */
-static void cpt_request_destroy(CptRequest * request);
+void cpt_request_destroy(CptRequest * request);
 
 /**
  * Set major and minor version for the cpt header block.
@@ -41,7 +41,7 @@ static void cpt_request_destroy(CptRequest * request);
  * @param version_major From enum version.
  * @param version_minor From enum version.
 */
-static void cpt_request_version(CptRequest * cpt, uint8_t version_major, uint8_t version_minor);
+void cpt_request_version(CptRequest * cpt, uint8_t version_major, uint8_t version_minor);
 
 /**
  * Set the command value for the cpt header block.
@@ -49,7 +49,7 @@ static void cpt_request_version(CptRequest * cpt, uint8_t version_major, uint8_t
  * @param cpt   Pointer to a cpt structure.
  * @param cmd   From enum commands.
 */
-static void cpt_request_cmd(CptRequest * cpt, uint8_t cmd);
+void cpt_request_cmd(CptRequest * cpt, uint8_t cmd);
 
 /**
  * Set the message length for the cpt header block.
@@ -57,7 +57,7 @@ static void cpt_request_cmd(CptRequest * cpt, uint8_t cmd);
  * @param cpt       Pointer to a cpt structure.
  * @param msg_len   An 8-bit integer.
 */
-static void cpt_request_len(CptRequest * cpt, uint16_t msg_len);
+void cpt_request_len(CptRequest * cpt, uint16_t msg_len);
 
 /**
  * Set the channel id for the cpt header block.
@@ -65,7 +65,7 @@ static void cpt_request_len(CptRequest * cpt, uint16_t msg_len);
  * @param cpt           Pointer to a cpt structure.
  * @param channel_id    A 16-bit integer.
 */
-static void cpt_request_chan(CptRequest * cpt, uint16_t channel_id);
+void cpt_request_chan(CptRequest * cpt, uint16_t channel_id);
 
 /**
  * Set the MSG field for the cpt packet.
@@ -75,7 +75,7 @@ static void cpt_request_chan(CptRequest * cpt, uint16_t channel_id);
  * @param cpt  Pointer to a cpt structure.
  * @param msg  Pointer to an array of characters.
 */
-static void cpt_request_msg(CptRequest * cpt, char * msg);
+void cpt_request_msg(CptRequest * cpt, char * msg);
 
 /**
  * Reset packet parameters.
@@ -85,6 +85,6 @@ static void cpt_request_msg(CptRequest * cpt, char * msg);
  *
  * @param packet    A CptRequest struct.
 */
-static void cpt_request_reset(CptRequest * packet);
+void cpt_request_reset(CptRequest * packet);
 
 #endif //TEMPLATE2_CPT_REQUEST_BUILDER_H

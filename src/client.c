@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "cpt_builder.h"
+#include "cpt_request_builder.h"
 
 #define SERVER_PORT     12345
 #define BUFFER_LENGTH    400
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     char   server[BUFSIZ];
     struct sockaddr_in6 serveraddr;
     struct addrinfo hints, *res;
-
+    CptRequest * request = cpt_request_init();
     do
     {
         sd = socket(AF_INET6, SOCK_STREAM, 0);
@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
 
     } while (FALSE);
 
+    cpt_request_destroy(request);
     /* Close down any open socket descriptors                              */
     if (sd != -1) close(sd);
     return EXIT_SUCCESS;

@@ -8,7 +8,7 @@
 #define VERSION_MAX 15
 #define VERSION_MIN 0
 
-static CptRequest * cpt_request_init(void)
+CptRequest * cpt_request_init()
 {
     CptRequest * request = calloc(1, sizeof(CptRequest));
     request->version      = 0;
@@ -20,7 +20,7 @@ static CptRequest * cpt_request_init(void)
     return request;
 }
 
-static void cpt_request_destroy(CptRequest * request)
+void cpt_request_destroy(CptRequest * request)
 {
     request->version      = 0;
     request->cmd_code     = 0;
@@ -36,7 +36,7 @@ static void cpt_request_destroy(CptRequest * request)
 }
 
 
-static void cpt_request_version(CptRequest * cpt, uint8_t version_major, uint8_t version_minor)
+void cpt_request_version(CptRequest * cpt, uint8_t version_major, uint8_t version_minor)
 {
     uint8_t version = 0;
     if (version_minor < VERSION_MIN || version_major < VERSION_MIN || version_minor > VERSION_MAX || version_major > VERSION_MAX)
@@ -53,28 +53,28 @@ static void cpt_request_version(CptRequest * cpt, uint8_t version_major, uint8_t
     cpt->version = version;
 }
 
-static void cpt_request_cmd(CptRequest * cpt, uint8_t cmd)
+void cpt_request_cmd(CptRequest * cpt, uint8_t cmd)
 {
     cpt->cmd_code = cmd;
 }
 
-static void cpt_request_len(CptRequest * cpt, uint16_t msg_len)
+void cpt_request_len(CptRequest * cpt, uint16_t msg_len)
 {
     cpt->msg_len = msg_len;
 }
 
-static void cpt_request_chan(CptRequest * cpt, uint16_t channel_id)
+void cpt_request_chan(CptRequest * cpt, uint16_t channel_id)
 {
     cpt->channel_id = channel_id;
 }
 
-static void cpt_request_msg(CptRequest * cpt, char * msg)
+void cpt_request_msg(CptRequest * cpt, char * msg)
 {
     cpt->msg     = strdup(msg);
     cpt_request_len(cpt, (uint16_t) strlen(cpt->msg));
 }
 
-static void cpt_request_reset(CptRequest * packet)
+void cpt_request_reset(CptRequest * packet)
 {
     packet->version      = 0;
     packet->cmd_code     = 0;
