@@ -115,44 +115,52 @@ CptResponse * cpt_response_init(uint16_t res_code) {
 
 
 void cpt_response_destroy(CptResponse * response) {
-    free(response->MSG);
-    response->MSG = NULL;
-    response->MSG_LEN = 0;
-    response->RES_CODE = 0;
-}
-
-
-// Need to check what it actually does
-void cpt_response_reset(CptResponse * response) {
-    cpt_response_destroy(response);
+    cpt_response_reset(response);
     free(response);
 }
 
 
-/**
- * Initialize CptMsgResponse server-side sub-packet.
- *
- * @param packet    Received client-side packet.
- * @param data      Data being sent to client.
- * @return          CptResponse object.
- */
+void cpt_response_reset(CptResponse * response) {
+    free(response->MSG);
+    response->MSG      = NULL;
+    response->MSG_LEN  = 0;
+    response->RES_CODE = 0;
+}
+
+
 CptMsgResponse * cpt_msg_response_init(uint8_t * msg, uint16_t chan_id, uint16_t user_id) {
     CptMsgResponse *cpt_res_msg_ptr = malloc(sizeof(CptMsgResponse));
 
     char* msg_ptr;
     msg_ptr = (char*) msg;
+    printf("cpt_msg_response_init() : msg = %s\n", msg_ptr);
 
     if (cpt_res_msg_ptr == NULL) {
         printf("malloc error: cpt_msg_response_init()\n");
     }
     cpt_res_msg_ptr->CHANNEL_ID = chan_id;
-    cpt_res_msg_ptr->USER_ID = user_id;
-    cpt_res_msg_ptr->MSG = strdup(msg_ptr); // ?
-    cpt_res_msg_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_msg_ptr->MSG);
+    cpt_res_msg_ptr->USER_ID    = user_id;
+    cpt_res_msg_ptr->MSG        = strdup(msg_ptr); // ?
+    cpt_res_msg_ptr->MSG_LEN    = (uint16_t) strlen(cpt_res_msg_ptr->MSG);
 
     return cpt_res_msg_ptr;
 }
 
 
-
+/**
+ * Destroy CptMsgResponse object.
+ *
+ * Destroys CptMsgResponse object, freeing any allocated memory
+ * and setting all pointers to null.
+ *
+ * @param msg_res  Pointer to a CptResponse object.
+ */
+void cpt_msg_response_destroy(CptMsgResponse * msg_res) {
+    free(msg_res->MSG);
+    msg_res->MSG         = NULL;
+    msg_res->MSG_LEN     = 0;
+    msg_res->USER_ID     = 0;
+    msg_res->CHANNEL_ID  = 0;
+    free(msg_res);
+}
 

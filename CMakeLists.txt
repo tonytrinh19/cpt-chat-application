@@ -31,6 +31,8 @@ set(CLIENT_MAIN_SOURCE
         "${template2_SOURCE_DIR}/src/client.c"
         )
 
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15.6")
+
 ### Require out-of-source builds
 # this still creates a CMakeFiles directory and CMakeCache.txt- can we delete them?
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
