@@ -11,7 +11,6 @@ typedef struct cpt_request CptRequest;
 struct cpt_request {
     uint8_t version;
     uint8_t cmd_code;
-    char channel_type;
     uint16_t channel_id;
     uint16_t msg_len;
     char *msg;
@@ -25,7 +24,7 @@ struct cpt_request {
 *
 * @return Pointer to cpt struct.
 */
-CptRequest * cpt_request_init();
+CptRequest * cpt_request_init(void);
 
 /**
  * Free all memory and set fields to null.
@@ -75,7 +74,7 @@ void cpt_request_chan(CptRequest * cpt, uint16_t channel_id);
  * @param cpt  Pointer to a cpt structure.
  * @param msg  Pointer to an array of characters.
 */
-void cpt_request_msg(CptRequest * cpt, char * msg);
+void cpt_request_msg(CptRequest * cpt, const char * msg);
 
 /**
  * Reset packet parameters.
@@ -86,5 +85,21 @@ void cpt_request_msg(CptRequest * cpt, char * msg);
  * @param packet    A CptRequest struct.
 */
 void cpt_request_reset(CptRequest * packet);
+
+/**
+* Serialize a CptRequest struct for transmission.
+*
+* @param cpt    A CptRequest struct.
+* @return       Size of the serialized packet.
+*/
+size_t cpt_serialize_request(const CptRequest * req, uint8_t * buffer);
+
+/**
+* Create a cpt struct from a cpt packet.
+*
+* @param packet    A serialized cpt protocol message.
+* @return A pointer to a cpt struct.
+*/
+CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size);
 
 #endif //TEMPLATE2_CPT_REQUEST_BUILDER_H

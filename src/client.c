@@ -12,12 +12,17 @@
 #define SERVER_PORT     12345
 #define BUFFER_LENGTH    400
 #define FALSE              0
-#define SERVER_NAME     "10.65.0.209"
+#define SERVER_NAME     "10.0.0.169"
+// 10.0.0.169
+// school: 10.65.0.209
 
-/* Pass in 1 parameter which is either the */
-/* address or host name of the server, or  */
-/* set the server name in the #define      */
-/* SERVER_NAME.                            */
+static size_t get_size_for_serialized_request_buffer(const CptRequest * request)
+{
+    size_t num = 6;
+    num += request->msg_len;
+    return num;
+}
+
 int main(int argc, char *argv[])
 {
     int    sd=-1, rc, bytesReceived;
@@ -26,6 +31,15 @@ int main(int argc, char *argv[])
     struct sockaddr_in6 serveraddr;
     struct addrinfo hints, *res;
     CptRequest * request = cpt_request_init();
+
+    request->version = 13;
+    request->cmd_code = 100;
+    request->channel_id = 25739;
+    cpt_request_msg(request, "hi");
+    size_t size_buf = get_size_for_serialized_request_buffer(request);
+    uint8_t * buff = calloc(size_buf, sizeof(uint8_t));
+    size_t size = cpt_serialize_request(request, buff);
+
     do
     {
         sd = socket(AF_INET6, SOCK_STREAM, 0);
@@ -85,7 +99,7 @@ int main(int argc, char *argv[])
         /* Send 250 bytes of a's to the server                              */
         /********************************************************************/
         memset(buffer, 'a', sizeof(buffer));
-        rc = send(sd, buffer, sizeof(buffer), 0);
+        rc = send(sd, buff, size_buf * sizeof(uint8_t), 0);
         if (rc < 0)
         {
             perror("send() failed");

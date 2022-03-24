@@ -220,6 +220,16 @@ int main (int argc, char *argv[])
                     len = rc;
                     printf("  %d bytes received\n", len);
 
+
+
+                    /** Print receiving packet*/
+
+                    for (int k = 0; k < len; ++k)
+                    {
+                        printf("Packet:%d\n", (uint8_t) buffer[k]);
+                    }
+
+
                     /* Echo the data back to the client                  */
                     rc = send(fds[i].fd, buffer, len, 0);
                     if (rc < 0)
