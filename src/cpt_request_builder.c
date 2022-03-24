@@ -58,7 +58,7 @@ static void cpt_request_cmd(CptRequest * cpt, uint8_t cmd)
     cpt->cmd_code = cmd;
 }
 
-static void cpt_request_len(CptRequest * cpt, uint8_t msg_len)
+static void cpt_request_len(CptRequest * cpt, uint16_t msg_len)
 {
     cpt->msg_len = msg_len;
 }
@@ -71,7 +71,7 @@ static void cpt_request_chan(CptRequest * cpt, uint16_t channel_id)
 static void cpt_request_msg(CptRequest * cpt, char * msg)
 {
     cpt->msg     = strdup(msg);
-    cpt->msg_len = (uint16_t) strlen(cpt->msg);
+    cpt_request_len(cpt, (uint16_t) strlen(cpt->msg));
 }
 
 static void cpt_request_reset(CptRequest * packet)
