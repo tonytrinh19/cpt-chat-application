@@ -123,7 +123,16 @@ void cpt_msg_response_destroy(CptMsgResponse * msg_res);
 * @param buffer A pointer that will store serialized string
 * @return       Size of the serialized packet.
 */
-size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer);
+size_t cpt_serialize_response(CptResponse * req, uint8_t * buffer);
+
+
+/**
+* Serialize a CptMsgResponse response sub-packet object.
+*
+* @param cpt    A CptResponse object.
+* @return       Size of the serialized packet.
+*/
+size_t cpt_serialize_msg(CptMsgResponse * msg_res, uint8_t * buffer);
 
 
 /**

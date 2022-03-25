@@ -53,38 +53,60 @@ void cpt_msg_response_destroy(CptMsgResponse * msg_res) {
 }
 
 
-size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer) {
-    char* binary_version = to_binary_string_8(req->version);
-    char* binary_cmd_code = to_binary_string_8(req->cmd_code);
-    char* binary_channel_id = to_binary_string_16(req->channel_id);
-    char* binary_msg_len = to_binary_string_16(req->msg_len);
+size_t cpt_serialize_response(CptResponse * res, uint8_t * buffer) {
+    size_t serialize_res_size;
+    char* binary_code = to_binary_string_8(res->code);
+    char* binary_data = to_binary_string_8(res->data);
 
-    char* version_ptr = strdup(binary_version);
-    char* cmd_code_ptr = strdup(binary_cmd_code);
-    char* channel_id_ptr = strdup(binary_channel_id);
-    char* msg_len_ptr = strdup(binary_msg_len);
+    char* code_string = strdup(binary_code);
+    char* data_string = strdup(binary_data);
 
-    char* string = malloc(sizeof(char) * 48 + req->msg_len);
+    char* string = malloc(sizeof(char) * 16);
 
-    strcat(string, version_ptr);
-    strcat(string, cmd_code_ptr);
-    strcat(string, channel_id_ptr);
-    strcat(string, msg_len_ptr);
-    strcat(string, req->msg);
+    strcat(string, code_string);
+    strcat(string, data_string);
 
-    free(binary_version);
-    free(binary_cmd_code);
+    free(binary_code);
+    free(binary_data);
+    free(code_string);
+    free(data_string);
+
+    buffer = (uint8_t *) strdup(string);
+    serialize_res_size = 2;
+
+    return serialize_res_size;
+}
+
+
+size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
+    size_t serialize_msg_size;
+    char* binary_channel_id = to_binary_string_16(res->channel_id);
+    char* binary_user_id = to_binary_string_16(res->user_id);
+    char* binary_msg_len = to_binary_string_16(res->msg_len);
+
+    char* channel_id_string = strdup(binary_channel_id);
+    char* user_id_string = strdup(binary_user_id);
+    char* msg_len_string = strdup(binary_msg_len);
+
+    char* string = malloc(sizeof(char) * 48 + res->msg_len);
+
+    strcat(string, channel_id_string);
+    strcat(string, user_id_string);
+    strcat(string, msg_len_string);
+    strcat(string, res->msg);
+
     free(binary_channel_id);
+    free(binary_user_id);
     free(binary_msg_len);
-    free(version_ptr);
-    free(cmd_code_ptr);
-    free(channel_id_ptr);
-    free(msg_len_ptr);
+    free(channel_id_string);
+    free(user_id_string);
+    free(msg_len_string);
 
     buffer = (uint8_t *) strdup(string);
 //    printf("%s", buffer);
+    serialize_msg_size = 6 + res->msg_len;
 
-    return 6 + req->msg_len;
+    return serialize_msg_size;
 }
 
 
@@ -124,6 +146,7 @@ char* to_binary_string_16(uint16_t number) {
  */
 CptResponse * cpt_parse_response(uint8_t * res_buf, size_t data_size) {
     CptResponse *cpt_res;
+
 
 }
 
