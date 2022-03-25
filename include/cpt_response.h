@@ -19,17 +19,16 @@
 #include "cpt_request_builder.h"
 
 typedef struct cpt_response {
-    uint8_t RES_CODE;
-    uint16_t MSG_LEN;
-    char* MSG;
+    uint8_t code;
+    uint8_t data;
 } CptResponse;
 
 
 typedef struct cpt_msg_response {
-    uint16_t CHANNEL_ID;
-    uint16_t USER_ID;
-    uint16_t MSG_LEN;
-    char* MSG;
+    uint16_t channel_id;
+    uint16_t user_id;
+    uint16_t msg_len;
+    char* msg;
 } CptMsgResponse;
 
 
@@ -125,6 +124,16 @@ void cpt_msg_response_destroy(CptMsgResponse * msg_res);
 * @return       Size of the serialized packet.
 */
 size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer);
+
+
+/**
+ * @brief Parse serialized server response.
+ *
+ * @param response  Address to a CptResponse object.
+ * @param buffer    Serialized response from server.
+ * @return Pointer to filled CptResponse.
+ */
+CptResponse * cpt_parse_response(uint8_t * res_buf, size_t data_size);
 
 
 /**
