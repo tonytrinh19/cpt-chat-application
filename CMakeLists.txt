@@ -9,11 +9,12 @@ project(template2
         LANGUAGES C)
 
 set(HEADER_LIST
-        "${template2_SOURCE_DIR}/include/common.h"
+        "${template2_SOURCE_DIR}/include/common.h" "${template2_SOURCE_DIR}/include/cpt_request_builder.h"
         )
 
 set(COMMON_SOURCE_LIST
         "${template2_SOURCE_DIR}/src/common.c"
+        "${template2_SOURCE_DIR}/src/cpt_request_builder.c"
         )
 
 set(SERVER_SOURCE_LIST

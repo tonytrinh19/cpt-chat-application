@@ -159,13 +159,11 @@ void cpt_msg_response_destroy(CptMsgResponse * msg_res) {
 size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer) {
     char* binary_version = to_binary_string_8(req->version);
     char* binary_cmd_code = to_binary_string_8(req->cmd_code);
-    char* binary_channel_type = to_binary_string_8((uint8_t) req->channel_type);
     char* binary_channel_id = to_binary_string_16(req->channel_id);
     char* binary_msg_len = to_binary_string_16(req->msg_len);
 
     char* version_ptr = strdup(binary_version);
     char* cmd_code_ptr = strdup(binary_cmd_code);
-    char* channel_type_ptr = strdup(binary_channel_type);  // need to check
     char* channel_id_ptr = strdup(binary_channel_id);
     char* msg_len_ptr = strdup(binary_msg_len);
 
@@ -173,19 +171,16 @@ size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer) {
 
     strcat(string, version_ptr);
     strcat(string, cmd_code_ptr);
-    strcat(string, channel_type_ptr);
     strcat(string, channel_id_ptr);
     strcat(string, msg_len_ptr);
     strcat(string, req->msg);
 
     free(binary_version);
     free(binary_cmd_code);
-    free(binary_channel_type);
     free(binary_channel_id);
     free(binary_msg_len);
     free(version_ptr);
     free(cmd_code_ptr);
-    free(channel_type_ptr);
     free(channel_id_ptr);
     free(msg_len_ptr);
 
