@@ -14,6 +14,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
+#include <dc_util/bits.h>
+#include "cpt_request_builder.h"
 
 typedef struct cpt_response {
     uint8_t RES_CODE;
@@ -113,5 +116,98 @@ CptMsgResponse * cpt_msg_response_init(uint8_t * msg, uint16_t chan_id, uint16_t
  */
 void cpt_msg_response_destroy(CptMsgResponse * msg_res);
 
+
+/**
+* Serialize a CptRequest struct for transmission.
+*
+* @param req    A CptRequest struct.
+* @param buffer A pointer that will store serialized string
+* @return       Size of the serialized packet.
+*/
+size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer);
+
+
+/**
+ * Change number to binary string (8 bit form).
+ *
+ * @param number A 8 bits number
+ * @return       String filled with binary
+ */
+char* to_binary_string_8(uint8_t number);
+
+
+/**
+ * Change number to binary string (16 bit form).
+ *
+ * @param number A 16 bits number
+ * @return       String filled with binary
+ */
+char* to_binary_string_16(uint16_t number);
+
+
+/**
+ * Handle a received 'LOGIN' protocol message.
+ *
+ * Use information in the CptRequest to handle
+ * a LOGIN protocol message from a connected client.
+ * If successful, the protocol request will be fulfilled,
+ * updating any necessary information contained within
+ * <server_info>.
+ *
+ * @param server_info   Server data structures and information.
+ * @param name          Name of user in received Packet MSG field.
+ * @return              1 if successful, error code on failure.
+ */
+int cpt_login_response(void * server_info, char * name);
+
+
+/**
+ * Handle a received 'LOGOUT' protocol message.
+ *
+ * Use information in the CptRequest to handle
+ * a LOGOUT protocol message from a connected client.
+ * If successful, will remove any instance of the user
+ * specified by the user <id> from the GlobalChannel
+ * and any other relevant data structures.
+ *
+ * @param server_info   Server data structures and information.
+ * @return Status Code 1 if successful, other if failure.
+ */
+int cpt_logout_response(void * server_info);
+
+
+/**
+ * Handle a received 'GET_USERS' protocol message.
+ *
+ * Retrieves all users in the specified <chan_id>,
+ * placing them in a buffer for the CptResponse packet
+ * in the format:
+ *      < user_id >< whitespace >< username >< newline >
+ *
+ * Example given:
+ *      1 'Clark Kent'
+ *      2 'Bruce Wayne'
+ *      3 'Fakey McFakerson'
+ *
+ * @param server_info   Server data structures and information.
+ * @return Status Code (0 if successful, other if failure).
+ */
+int cpt_get_users_response(void * server_info, int chan_id);
+
+
+/**
+ * Handle a received 'CREATE_CHANNEL' protocol message.
+ *
+ * If a <user_list> was received in the GET_CHANNEL body,
+ * function will also parse the <user_list> string and attempt
+ * to add the requested user IDs to the channel.
+ *
+ * If <id_list> is NULL, function will create a new channel with
+ * only the requesting user within it.
+ *
+ * @param server_info   Server data structures and information.
+ * @return Status Code (0 if successful, other if failure).
+ */
+int cpt_create_channel_response(void * server_info, char * id_list);
 
 #endif //TEMPLATE2_CPT_RESPONSE_H

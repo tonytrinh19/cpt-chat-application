@@ -14,44 +14,43 @@ CptResponse * cpt_response_init(uint16_t res_code) {
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 2:
-            cpt_res_header_ptr->MSG = strdup("he channel id is in the CHAN_ID, msg contents are a message sub-packet\n");
+            cpt_res_header_ptr->MSG = strdup("The channel id is in the CHAN_ID, msg contents are a message sub-packet\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 3:
-            cpt_res_header_ptr->MSG = strdup("The ID of the connected user, msg contents are the username\n");
+            cpt_res_header_ptr->MSG = strdup("User connected\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 4:
-            cpt_res_header_ptr->MSG = strdup("The ID of the disconnected user, msg contents are the username\n");
+            cpt_res_header_ptr->MSG = strdup("User is currently disconnected\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 5:
-            cpt_res_header_ptr->MSG = strdup("Message could not be delivered, could be followed by a USER_DISCONNECTED\n");
+            cpt_res_header_ptr->MSG = strdup("Message could not be delivered\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 6:
-            cpt_res_header_ptr->MSG = strdup(
-                    "Response sent to requestee, if the channel is created it provides the channel ID in the <CHAN_ID> section\n");
+            cpt_res_header_ptr->MSG = strdup("Channel created\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 7:
-            cpt_res_header_ptr->MSG = strdup("Response sent to requestee, if the channel cannot be created\n");
+            cpt_res_header_ptr->MSG = strdup("Channel cannot be created\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 8:
-            cpt_res_header_ptr->MSG = strdup("Response sent to all members of channel when it is destroyed\n");
+            cpt_res_header_ptr->MSG = strdup("Channel is destroyed\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 9:
-            cpt_res_header_ptr->MSG = strdup("Response sent to all members when a new client joins the channel\n");
+            cpt_res_header_ptr->MSG = strdup("NEW client joins the channel\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 10:
-            cpt_res_header_ptr->MSG = strdup("Response sent to all members when a member leaves the channel\n");
+            cpt_res_header_ptr->MSG = strdup("User leaves the channel\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 11:
-            cpt_res_header_ptr->MSG = strdup("A response message from GET_USERS\n");
+            cpt_res_header_ptr->MSG = strdup("Current users (Get Users)\n");
             cpt_res_header_ptr->MSG_LEN = (uint16_t) strlen(cpt_res_header_ptr->MSG);
             break;
         case 12:
@@ -147,14 +146,6 @@ CptMsgResponse * cpt_msg_response_init(uint8_t * msg, uint16_t chan_id, uint16_t
 }
 
 
-/**
- * Destroy CptMsgResponse object.
- *
- * Destroys CptMsgResponse object, freeing any allocated memory
- * and setting all pointers to null.
- *
- * @param msg_res  Pointer to a CptResponse object.
- */
 void cpt_msg_response_destroy(CptMsgResponse * msg_res) {
     free(msg_res->MSG);
     msg_res->MSG         = NULL;
@@ -163,4 +154,90 @@ void cpt_msg_response_destroy(CptMsgResponse * msg_res) {
     msg_res->CHANNEL_ID  = 0;
     free(msg_res);
 }
+
+
+size_t cpt_serialize_response(CptRequest * req, uint8_t * buffer) {
+    char* binary_version = to_binary_string_8(req->version);
+    char* binary_cmd_code = to_binary_string_8(req->cmd_code);
+    char* binary_channel_type = to_binary_string_8((uint8_t) req->channel_type);
+    char* binary_channel_id = to_binary_string_16(req->channel_id);
+    char* binary_msg_len = to_binary_string_16(req->msg_len);
+
+    char* version_ptr = strdup(binary_version);
+    char* cmd_code_ptr = strdup(binary_cmd_code);
+    char* channel_type_ptr = strdup(binary_channel_type);  // need to check
+    char* channel_id_ptr = strdup(binary_channel_id);
+    char* msg_len_ptr = strdup(binary_msg_len);
+
+    char* string = malloc(sizeof(char) * 56 + req->msg_len + 1);
+
+    strcat(string, version_ptr);
+    strcat(string, cmd_code_ptr);
+    strcat(string, channel_type_ptr);
+    strcat(string, channel_id_ptr);
+    strcat(string, msg_len_ptr);
+    strcat(string, req->msg);
+
+    free(binary_version);
+    free(binary_cmd_code);
+    free(binary_channel_type);
+    free(binary_channel_id);
+    free(binary_msg_len);
+    free(version_ptr);
+    free(cmd_code_ptr);
+    free(channel_type_ptr);
+    free(channel_id_ptr);
+    free(msg_len_ptr);
+
+    buffer = (uint8_t *) strdup(string);
+//    printf("%s", buffer);
+
+    return 64 + req->msg_len;
+}
+
+
+
+char* to_binary_string_8(uint8_t number) {
+    int num_bits = 8;
+    char *string = malloc(num_bits + 1);
+
+    for (int i = num_bits - 1; i >= 0; i--) {
+        string[i] = (number & 1) + '0';
+        number >>= 1;
+    }
+    string[num_bits] = '\0';
+    return string;
+}
+
+
+char* to_binary_string_16(uint16_t number) {
+    int num_bits = 16;
+    char *string = malloc(num_bits + 1);
+
+    for (int i = num_bits - 1; i >= 0; i--) {
+        string[i] = (number & 1) + '0';
+        number >>= 1;
+    }
+    string[num_bits] = '\0';
+    return string;
+}
+
+/**
+ * Handle a received 'LOGIN' protocol message.
+ *
+ * Use information in the CptRequest to handle
+ * a LOGIN protocol message from a connected client.
+ * If successful, the protocol request will be fulfilled,
+ * updating any necessary information contained within
+ * <server_info>.
+ *
+ * @param server_info   Server data structures and information.
+ * @param name          Name of user in received Packet MSG field.
+ * @return              1 if successful, error code on failure.
+ */
+int cpt_login_response(void* server_info, char* name) {
+
+}
+
+
 

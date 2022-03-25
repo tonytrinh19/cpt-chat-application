@@ -7,7 +7,6 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "cpt_builder.h"
 
 #define SERVER_PORT     12345
 #define BUFFER_LENGTH    400
