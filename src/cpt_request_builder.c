@@ -86,7 +86,7 @@ size_t cpt_serialize_request(const CptRequest * req, uint8_t * buffer)
 {
     // Count starts with 6 because there are at least 6 uint8_t values in the buffer
     // version + 1, cmd_code + 1, chan_id and chan_type + 2, msg_len + 2
-    size_t count = 2;
+    size_t count = 6;
     uint8_t *msg = (uint8_t *) req->msg;
     // Saves the beginning of the buffer.
     uint8_t *temp = buffer;
