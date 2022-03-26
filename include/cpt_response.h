@@ -16,11 +16,12 @@
 #include <string.h>
 #include <stdbool.h>
 #include <dc_util/bits.h>
-#include "cpt_request_builder.h"
+
 
 typedef struct cpt_response {
     uint8_t code;
-    uint8_t data;
+    uint16_t data_size;
+    uint8_t* data;
 } CptResponse;
 
 
@@ -30,6 +31,16 @@ typedef struct cpt_msg_response {
     uint16_t msg_len;
     char* msg;
 } CptMsgResponse;
+
+
+typedef struct cpt_request {
+    uint8_t version;
+    uint8_t cmd_code;
+    uint16_t channel_id;
+    uint16_t msg_len;
+    char *msg;
+}CptRequest;
+
 
 
 //CPT Server Response Codes
@@ -136,13 +147,12 @@ size_t cpt_serialize_msg(CptMsgResponse * msg_res, uint8_t * buffer);
 
 
 /**
- * @brief Parse serialized server response.
- *
- * @param response  Address to a CptResponse object.
- * @param buffer    Serialized response from server.
- * @return Pointer to filled CptResponse.
- */
-CptResponse * cpt_parse_response(uint8_t * res_buf, size_t data_size);
+* Create a cpt struct from a cpt packet.
+*
+* @param packet    A serialized cpt protocol message.
+* @return A pointer to a cpt struct.
+*/
+CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size);
 
 
 /**
