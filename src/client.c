@@ -23,9 +23,10 @@ static size_t get_size_for_serialized_request_buffer(const CptRequest * request)
     return num;
 }
 
+
 int main(int argc, char *argv[])
 {
-    int    sd=-1, rc, bytesReceived;
+    int    sd=-1, rc, bytesReceived, len;
     char   buffer[BUFFER_LENGTH];
     char   server[BUFSIZ];
     struct sockaddr_in6 serveraddr;
@@ -36,9 +37,13 @@ int main(int argc, char *argv[])
     request->cmd_code = 100;
     request->channel_id = 25739;
     cpt_request_msg(request, "hi");
+
+
+
     size_t size_buf = get_size_for_serialized_request_buffer(request);
     uint8_t * buff = calloc(size_buf, sizeof(uint8_t));
     size_t size = cpt_serialize_request(request, buff);
+
 
     do
     {
@@ -111,6 +116,17 @@ int main(int argc, char *argv[])
         {
             rc = recv(sd, & buffer[bytesReceived],
                       BUFFER_LENGTH - bytesReceived, 0);
+
+            // packet received
+//            for (int k = 0; k < rc; ++k)
+//            {
+//                printf("Packet: %d\n", (uint8_t) buffer[k]);
+//            }
+            len = rc;
+            printf("  %d bytes received\n", len);
+
+//            //
+
             if (rc < 0)
             {
                 perror("recv() failed");

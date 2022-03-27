@@ -17,6 +17,9 @@
 
 
 
+
+
+
 int main (int argc, char *argv[])
 {
     int    len, rc, on = 1;
@@ -28,6 +31,8 @@ int main (int argc, char *argv[])
     int    timeout;
     struct pollfd fds[SOMAXCONN];
     int    nfds = 1, current_size = 0, i, j;
+
+
 
     /* Create an AF_INET6 stream socket to receive incoming      */
     /* connections on                                            */
@@ -223,18 +228,21 @@ int main (int argc, char *argv[])
                     printf("  %d bytes received\n", len);
 
 
-
                     /** Print receiving packet*/
+//                    for (int k = 0; k < len; ++k)
+//                    {
+//                        printf("Packet:%d\n", (uint8_t) buffer[k]);
+//                    }
+
+
+                    /** Send response to client */
                     CptResponse *cpt_rep = cpt_response_init(1);
-
-                    for (int k = 0; k < len; ++k)
-                    {
-                        printf("Packet:%d\n", (uint8_t) buffer[k]);
-                    }
-
+                    size_t res_size = cpt_serialize_response(cpt_rep, buffer);
 
                     /* Echo the data back to the client                  */
-                    rc = send(fds[i].fd, buffer, len, 0);
+//                    rc = send(fds[i].fd, buffer, len, 0);
+                    rc = send(fds[i].fd, buffer, res_size, 0);
+
                     if (rc < 0)
                     {
                         perror("  send() failed");
