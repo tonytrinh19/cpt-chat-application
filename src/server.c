@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include "cpt_request_builder.h"
 
 #define SERVER_PORT  12345
 
@@ -22,7 +23,7 @@ int main (int argc, char *argv[])
     int    listen_sd = -1, new_sd = -1;
     int    desc_ready, end_server = FALSE, compress_array = FALSE;
     int    close_conn;
-    char   buffer[80];
+    char   buffer[BUFSIZ];
     struct sockaddr_in6   addr;
     int    timeout;
     struct pollfd fds[SOMAXCONN];
@@ -154,11 +155,6 @@ int main (int argc, char *argv[])
                 /* loop back and call poll again.                      */
                 do
                 {
-                    /* Accept each incoming connection. If               */
-                    /* accept fails with EWOULDBLOCK, then we            */
-                    /* have accepted all of them. Any other              */
-                    /* failure on accept will cause us to end the        */
-                    /* server.                                           */
                     new_sd = accept(listen_sd, NULL, NULL);
                     if (new_sd < 0)
                     {
@@ -170,9 +166,10 @@ int main (int argc, char *argv[])
                         break;
                     }
 
-                    /* Add the new incoming connection to the            */
-                    /* pollfd structure                                  */
                     printf("  New incoming connection - %d\n", new_sd);
+
+                    // ALL THE CLIENTS ARE HERE
+                    // Set the channel_id and stuff here
                     fds[nfds].fd = new_sd;
                     fds[nfds].events = POLLIN;
                     nfds++;
@@ -189,7 +186,6 @@ int main (int argc, char *argv[])
                 close_conn = FALSE;
                 /* Receive all incoming data on this socket            */
                 /* before we loop back and call poll again.            */
-
                 do
                 {
                     /* Receive data on this connection until the         */
@@ -219,19 +215,13 @@ int main (int argc, char *argv[])
                     /* Data was received                                 */
                     len = rc;
                     printf("  %d bytes received\n", len);
-
-
-
-                    /** Print receiving packet*/
-
-                    for (int k = 0; k < len; ++k)
-                    {
-                        printf("Packet:%d\n", (uint8_t) buffer[k]);
-                    }
-
-
+                    CptRequest * req = cpt_parse_request((uint8_t *) buffer, len);
+                    printf("MESSAGE: %s\n", req->msg);
                     /* Echo the data back to the client                  */
-                    rc = send(fds[i].fd, buffer, len, 0);
+                    // Parse and send message to the destination.
+//                    rc = send(fds[i].fd, buffer, len, 0);
+                    rc = send(fds[i].fd, req->msg, req->msg_len, 0);
+
                     if (rc < 0)
                     {
                         perror("  send() failed");
@@ -239,7 +229,8 @@ int main (int argc, char *argv[])
                         break;
                     }
 
-                } while(TRUE);
+                    cpt_request_destroy(req);
+                } while(FALSE);
 
                 /* If the close_conn flag was turned on, we need       */
                 /* to clean up this active connection. This            */

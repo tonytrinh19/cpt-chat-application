@@ -100,6 +100,6 @@ size_t cpt_serialize_request(const CptRequest * req, uint8_t * buffer);
 * @param packet    A serialized cpt protocol message.
 * @return A pointer to a cpt struct.
 */
-CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size);
+CptRequest * cpt_parse_request(uint8_t * req_buf, int size);
 
 #endif //TEMPLATE2_CPT_REQUEST_BUILDER_H

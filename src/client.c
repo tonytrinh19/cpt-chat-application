@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     request->version = 13;
     request->cmd_code = 100;
     request->channel_id = 25739;
-    cpt_request_msg(request, "hi");
+    cpt_request_msg(request, "hello world");
     size_t size_buf = get_size_for_serialized_request_buffer(request);
     uint8_t * buff = calloc(size_buf, sizeof(uint8_t));
     size_t size = cpt_serialize_request(request, buff);
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
         /* Send 250 bytes of a's to the server                              */
         /********************************************************************/
         memset(buffer, 'a', sizeof(buffer));
-        rc = send(sd, buff, size_buf * sizeof(uint8_t), 0);
+        // * sizeof(uint8_t)
+        rc = send(sd, buff, size_buf, 0);
         if (rc < 0)
         {
             perror("send() failed");
@@ -107,10 +108,12 @@ int main(int argc, char *argv[])
         }
 
         bytesReceived = 0;
-        while (bytesReceived < BUFFER_LENGTH)
-        {
-            rc = recv(sd, & buffer[bytesReceived],
-                      BUFFER_LENGTH - bytesReceived, 0);
+        // BUFFER_LENGTH
+//        while (bytesReceived < (int) size_buf)
+//        {
+// buffer[bytesReceived]
+            rc = recv(sd, buffer,
+                      sizeof(buffer), 0);
             if (rc < 0)
             {
                 perror("recv() failed");
@@ -121,13 +124,16 @@ int main(int argc, char *argv[])
                 printf("The server closed the connection\n");
                 break;
             }
-            /* Increment the number of bytes that have been received so far  */
-            bytesReceived += rc;
-        }
+            buffer[rc] = '\0';
+            printf("RECEIVED: %s\n", buffer);
+//            /* Increment the number of bytes that have been received so far  */
+//            bytesReceived += rc;
 
+        close(sd);
     } while (FALSE);
 
     cpt_request_destroy(request);
+    free(buff);
     /* Close down any open socket descriptors                              */
     if (sd != -1) close(sd);
     return EXIT_SUCCESS;

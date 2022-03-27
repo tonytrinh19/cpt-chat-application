@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "cpt_request_builder.h"
 #define VERSION_MAX 15
 #define VERSION_MIN 0
@@ -119,7 +120,33 @@ size_t cpt_serialize_request(const CptRequest * req, uint8_t * buffer)
     return count;
 }
 
-//CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size)
-//{
-//
-//}
+CptRequest * cpt_parse_request(uint8_t * req_buf, int size)
+{
+    CptRequest * req = calloc((unsigned long) size, sizeof(uint8_t));
+    // parse the packet back to the request.
+    req->version  = *(req_buf++);
+    req->cmd_code = *(req_buf++);
+
+    uint16_t first_half_channel_id  = *(req_buf++);
+    first_half_channel_id <<= 8;
+    uint16_t second_half_channel_id = *(req_buf++);
+    uint16_t stuff = first_half_channel_id | second_half_channel_id;
+    req->channel_id = stuff;
+
+    uint16_t first_half_msg_len  = *(req_buf++);
+    first_half_channel_id <<= 8;
+    uint16_t second_half_msg_len = *(req_buf++);
+    uint16_t stuff2 = first_half_msg_len | second_half_msg_len;
+    req->msg_len = stuff2;
+
+    req->msg = calloc(req->msg_len, sizeof(char));
+
+
+    for (int i = 0; i < req->msg_len; ++i)
+    {
+        // BRUH
+        req->msg[i] = (char) *(req_buf++);
+    }
+
+    return req;
+}
