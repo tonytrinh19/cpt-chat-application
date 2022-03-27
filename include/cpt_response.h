@@ -34,17 +34,6 @@ typedef struct cpt_msg_response {
 } CptMsgResponse;
 
 
-typedef struct cpt_request {
-    uint8_t version;
-    uint8_t cmd_code;
-    uint16_t channel_id;
-    uint16_t msg_len;
-    char *msg;
-}CptRequest;
-
-
-
-
 //CPT Server Response Codes
 #define SUCCESS 1                // Operation was successful
 #define MESSAGE 2                // The channel id is in the CHAN_ID, msg contents are a message sub-packet
@@ -154,7 +143,7 @@ size_t cpt_serialize_msg(CptMsgResponse * msg_res, uint8_t * buffer);
 * @param packet    A serialized cpt protocol message.
 * @return A pointer to a cpt struct.
 */
-CptRequest * cpt_parse_response(uint8_t * req_buf, size_t req_size);
+CptResponse * cpt_parse_response(uint8_t * req_buf, size_t req_size);
 
 
 /**

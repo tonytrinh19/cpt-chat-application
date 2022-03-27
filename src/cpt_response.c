@@ -12,7 +12,7 @@ CptResponse * cpt_response_init(uint16_t res_code) {
 
     switch (res_code) {
         case SUCCESS:    // 1
-            cpt_res->data = (uint8_t *) strdup("Operation was successful\n");
+            cpt_res->data = (uint8_t *) strdup(" (Operation was successful)");
             cpt_res->data_size = (uint16_t) strlen((const char *) cpt_res->data);
             break;
         case MESSAGE:    // 2
@@ -261,8 +261,8 @@ size_t cpt_serialize_response(CptResponse * res, uint8_t * buffer) {
     *(buffer++) = res->code;
 
     uint16_t first_half_data_size  = res->data_size;
-    first_half_data_size >>= 8;
     uint16_t second_half_data_size  = first_half_data_size & 255;
+    first_half_data_size >>= 8;
 
     *(buffer++) = (uint8_t) first_half_data_size;
     *(buffer++) = (uint8_t) second_half_data_size;
@@ -288,16 +288,16 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 
     //channel_id
     uint16_t first_half_channel_id  = res->channel_id;
-    first_half_channel_id >>= 8;
     uint16_t second_half_channel_id = first_half_channel_id & 255;
+    first_half_channel_id >>= 8;
 
     *(buffer++) = (uint8_t) first_half_channel_id;
     *(buffer++) = (uint8_t) second_half_channel_id;
 
     //user_id
     uint16_t first_half_user_id  = res->user_id;
-    first_half_user_id >>= 8;
     uint16_t second_half_user_id = first_half_user_id & 255;
+    first_half_user_id >>= 8;
 
     *(buffer++) = (uint8_t) first_half_user_id;
     *(buffer++) = (uint8_t) second_half_user_id;
@@ -305,8 +305,8 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 
     //msg_len
     uint16_t first_half_msg_len = res->msg_len;
-    first_half_msg_len >>= 8;
     uint16_t second_half_msg_len = first_half_msg_len & 255;
+    first_half_msg_len >>= 8;
 
     *(buffer++) = (uint8_t) first_half_msg_len;
     *(buffer++) = (uint8_t) second_half_msg_len;
@@ -321,7 +321,7 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 }
 
 
-CptRequest * cpt_parse_response(uint8_t * res_buf, size_t res_size) {
+CptResponse * cpt_parse_response(uint8_t * res_buf, size_t res_size) {
 
     if (res_buf == NULL) {
         return NULL;
@@ -335,25 +335,6 @@ CptRequest * cpt_parse_response(uint8_t * res_buf, size_t res_size) {
     }
 
     else {
-//        cpt_req->version = *(req_buf++);
-//        cpt_req->cmd_code = *(req_buf++);
-//
-//        // channel_id (16)
-//        uint16_t first_half_channel_id = *req_buf++;
-//        uint16_t second_half_channel_id = *req_buf++;
-//        cpt_req->channel_id = first_half_channel_id + second_half_channel_id;
-//
-//        // msg_len (16)
-//        uint16_t first_half_msg_len = *req_buf++;
-//        uint16_t second_half_msg_len = *req_buf++;
-//        cpt_req->msg_len = first_half_msg_len + second_half_msg_len;
-//
-//        //msg
-//        for (int i = 0; i < cpt_req->msg_len; ++i)
-//        {
-//            cpt_req->msg[i] = (char) *(req_buf++);
-//        }
-
         cpt_res->code = *(res_buf++);
 
         //data_size

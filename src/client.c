@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "cpt_request_builder.h"
+#include "cpt_response.h"
 
 #define SERVER_PORT     8000
 #define BUFFER_LENGTH    400
@@ -114,8 +115,7 @@ int main(int argc, char *argv[])
 //        while (bytesReceived < (int) size_buf)
 //        {
 // buffer[bytesReceived]
-            rc = recv(sd, buffer,
-                      sizeof(buffer), 0);
+            rc = recv(sd, buffer, sizeof(buffer), 0);
             if (rc < 0)
             {
                 perror("recv() failed");

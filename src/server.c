@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "cpt_response.h"
+#include "cpt_request_builder.h"
 
 #define SERVER_PORT  8000
 
@@ -137,12 +138,14 @@ int main (int argc, char *argv[])
 
             /* If revents is not POLLIN, it's an unexpected result,  */
             /* log and end the server.                               */
+
+            /** Mac OS server won't crash if use "events" rather than "events" */
+//            if(fds[i].events != POLLIN)
             if(fds[i].revents != POLLIN)
             {
                 printf("  Error! revents = %d\n", fds[i].revents);
                 end_server = TRUE;
                 break;
-
             }
 
             if (fds[i].fd == listen_sd)
@@ -218,6 +221,8 @@ int main (int argc, char *argv[])
                     }
 
                     /* Data was received                                 */
+                    CptResponse * res = cpt_response_init(1);
+
                     len = rc;
                     printf("  %d bytes received\n", len);
                     CptRequest * req = cpt_parse_request((uint8_t *) buffer, len);
@@ -226,6 +231,16 @@ int main (int argc, char *argv[])
                     // Parse and send message to the destination.
 //                    rc = send(fds[i].fd, buffer, len, 0);
                     rc = send(fds[i].fd, req->msg, req->msg_len, 0);
+
+                    if (rc < 0)
+                    {
+                        perror("  send() failed");
+                        close_conn = TRUE;
+                        break;
+                    }
+
+                    rc = send(fds[i].fd, res->data, res->data_size, 0);
+
 
                     if (rc < 0)
                     {
