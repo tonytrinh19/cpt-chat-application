@@ -8,9 +8,9 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
-#include "cpt_request_builder.h"
+#include "cpt_response.h"
 
-#define SERVER_PORT  12345
+#define SERVER_PORT  8000
 
 #define TRUE             1
 #define FALSE            0
@@ -155,6 +155,11 @@ int main (int argc, char *argv[])
                 /* loop back and call poll again.                      */
                 do
                 {
+                    /* Accept each incoming connection. If               */
+                    /* accept fails with EWOULDBLOCK, then we            */
+                    /* have accepted all of them. Any other              */
+                    /* failure on accept will cause us to end the        */
+                    /* server.                                           */
                     new_sd = accept(listen_sd, NULL, NULL);
                     if (new_sd < 0)
                     {

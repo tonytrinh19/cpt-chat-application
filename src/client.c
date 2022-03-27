@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include "cpt_request_builder.h"
 
-#define SERVER_PORT     12345
+#define SERVER_PORT     8000
 #define BUFFER_LENGTH    400
 #define FALSE              0
-#define SERVER_NAME     "10.0.0.169"
+#define SERVER_NAME     "192.168.1.119"
 // 10.0.0.169
 // school: 10.65.0.209
 
@@ -25,7 +25,7 @@ static size_t get_size_for_serialized_request_buffer(const CptRequest * request)
 
 int main(int argc, char *argv[])
 {
-    int    sd=-1, rc, bytesReceived;
+    int    sd=-1, rc, bytesReceived, len;
     char   buffer[BUFFER_LENGTH];
     char   server[BUFSIZ];
     struct sockaddr_in6 serveraddr;
@@ -35,7 +35,10 @@ int main(int argc, char *argv[])
     request->version = 13;
     request->cmd_code = 100;
     request->channel_id = 25739;
-    cpt_request_msg(request, "hello world");
+    cpt_request_msg(request, "hi");
+
+
+
     size_t size_buf = get_size_for_serialized_request_buffer(request);
     uint8_t * buff = calloc(size_buf, sizeof(uint8_t));
     size_t size = cpt_serialize_request(request, buff);
@@ -99,8 +102,7 @@ int main(int argc, char *argv[])
         /* Send 250 bytes of a's to the server                              */
         /********************************************************************/
         memset(buffer, 'a', sizeof(buffer));
-        // * sizeof(uint8_t)
-        rc = send(sd, buff, size_buf, 0);
+        rc = send(sd, buff, size_buf * sizeof(uint8_t), 0);
         if (rc < 0)
         {
             perror("send() failed");
@@ -129,11 +131,9 @@ int main(int argc, char *argv[])
 //            /* Increment the number of bytes that have been received so far  */
 //            bytesReceived += rc;
 
-        close(sd);
     } while (FALSE);
 
     cpt_request_destroy(request);
-    free(buff);
     /* Close down any open socket descriptors                              */
     if (sd != -1) close(sd);
     return EXIT_SUCCESS;
