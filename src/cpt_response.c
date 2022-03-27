@@ -321,41 +321,55 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 }
 
 
-CptRequest * cpt_parse_response(uint8_t * req_buf, size_t req_size) {
+CptRequest * cpt_parse_response(uint8_t * res_buf, size_t res_size) {
 
-    if (req_buf == NULL) {
+    if (res_buf == NULL) {
         return NULL;
     }
 
-    CptRequest *cpt_req = malloc(req_size);
+    CptResponse *cpt_res = malloc(res_size);
 
-    if (cpt_req == NULL) {
-        printf("malloc error: cpt_parse_request()\n");
+    if (cpt_res == NULL) {
+        printf("malloc error: cpt_parse_response()\n");
         return NULL;
     }
 
     else {
-        cpt_req->version = *(req_buf++);
-        cpt_req->cmd_code = *(req_buf++);
+//        cpt_req->version = *(req_buf++);
+//        cpt_req->cmd_code = *(req_buf++);
+//
+//        // channel_id (16)
+//        uint16_t first_half_channel_id = *req_buf++;
+//        uint16_t second_half_channel_id = *req_buf++;
+//        cpt_req->channel_id = first_half_channel_id + second_half_channel_id;
+//
+//        // msg_len (16)
+//        uint16_t first_half_msg_len = *req_buf++;
+//        uint16_t second_half_msg_len = *req_buf++;
+//        cpt_req->msg_len = first_half_msg_len + second_half_msg_len;
+//
+//        //msg
+//        for (int i = 0; i < cpt_req->msg_len; ++i)
+//        {
+//            cpt_req->msg[i] = (char) *(req_buf++);
+//        }
 
-        // channel_id (16)
-        uint16_t first_half_channel_id = *req_buf++;
-        uint16_t second_half_channel_id = *req_buf++;
-        cpt_req->channel_id = first_half_channel_id + second_half_channel_id;
+        cpt_res->code = *(res_buf++);
 
-        // msg_len (16)
-        uint16_t first_half_msg_len = *req_buf++;
-        uint16_t second_half_msg_len = *req_buf++;
-        cpt_req->msg_len = first_half_msg_len + second_half_msg_len;
+        //data_size
+        uint16_t first_half_data_size = *(res_buf++);
+        uint16_t second_half_data_size = *(res_buf++);
+        cpt_res->data_size = first_half_data_size + second_half_data_size;
+
 
         //msg
-        for (int i = 0; i < cpt_req->msg_len; ++i)
+        for (int i = 0; i < cpt_res->data_size; ++i)
         {
-            cpt_req->msg[i] = (char) *(req_buf++);
+            cpt_res->data[i] = *(res_buf++);
         }
     }
 
-    return cpt_req;
+    return cpt_res;
 }
 
 
