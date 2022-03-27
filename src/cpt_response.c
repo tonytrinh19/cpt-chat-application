@@ -321,23 +321,13 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 }
 
 
-
-
-
-/**
-* Create a cpt struct from a cpt packet.
-*
-* @param packet    A serialized cpt protocol message.
-* @return A pointer to a cpt struct.
-*/
-CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size) {
+CptRequest * cpt_parse_response(uint8_t * req_buf, size_t req_size) {
 
     if (req_buf == NULL) {
         return NULL;
     }
 
     CptRequest *cpt_req = malloc(req_size);
-    CptMsgResponse *cpt_msg_res = malloc(req_size);
 
     if (cpt_req == NULL) {
         printf("malloc error: cpt_parse_request()\n");
@@ -366,6 +356,43 @@ CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size) {
     }
 
     return cpt_req;
+}
+
+
+/**
+ * Handle a received 'LOGIN' protocol message.
+ *
+ * Use information in the CptRequest to handle
+ * a LOGIN protocol message from a connected client.
+ * If successful, the protocol request will be fulfilled,
+ * updating any necessary information contained within
+ * <server_info>.
+ *
+ * @param server_info   Server data structures and information.
+ * @param name          Name of user in received Packet MSG field.
+ * @return              1 if successful, error code on failure.
+ */
+int cpt_login_response(void * server_info, char * name) {
+
+}
+
+
+/**
+ * Handle a received 'SEND' protocol message.
+ *
+ * Uses information in a received CptRequest to handle
+ * a SEND protocol message from a connected client.
+ *
+ * If successful, function will send the message in the
+ * MSG field of the received packet to every user in the
+ * CHAN_ID field of the received packet.
+ *
+ * @param server_info   Server data structures and information.
+// * @param name          Name of user in received Packet MSG field.
+ * @return Status Code (0 if successful, other if failure).
+ */
+int cpt_send_response(void * server_info) {
+
 }
 
 

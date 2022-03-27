@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <dc_util/bits.h>
+#include "linked_list.h"
 
 
 typedef struct cpt_response {
@@ -40,6 +41,7 @@ typedef struct cpt_request {
     uint16_t msg_len;
     char *msg;
 }CptRequest;
+
 
 
 
@@ -152,7 +154,7 @@ size_t cpt_serialize_msg(CptMsgResponse * msg_res, uint8_t * buffer);
 * @param packet    A serialized cpt protocol message.
 * @return A pointer to a cpt struct.
 */
-CptRequest * cpt_parse_request(uint8_t * req_buf, size_t req_size);
+CptRequest * cpt_parse_response(uint8_t * req_buf, size_t req_size);
 
 
 /**
@@ -237,5 +239,23 @@ int cpt_get_users_response(void * server_info, int chan_id);
  * @return Status Code (0 if successful, other if failure).
  */
 int cpt_create_channel_response(void * server_info, char * id_list);
+
+
+/**
+ * Handle a received 'SEND' protocol message.
+ *
+ * Uses information in a received CptRequest to handle
+ * a SEND protocol message from a connected client.
+ *
+ * If successful, function will send the message in the
+ * MSG field of the received packet to every user in the
+ * CHAN_ID field of the received packet.
+ *
+ * @param server_info   Server data structures and information.
+// * @param name          Name of user in received Packet MSG field.
+ * @return Status Code (0 if successful, other if failure).
+ */
+int cpt_send_response(void * server_info);
+
 
 #endif //TEMPLATE2_CPT_RESPONSE_H

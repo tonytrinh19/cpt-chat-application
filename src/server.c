@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include "cpt_response.h"
 
 #define SERVER_PORT  8000
 
@@ -217,12 +218,14 @@ int main (int argc, char *argv[])
                     }
 
                     /* Data was received                                 */
+
                     len = rc;
                     printf("  %d bytes received\n", len);
 
 
 
                     /** Print receiving packet*/
+                    CptResponse *cpt_rep = cpt_response_init(1);
 
                     for (int k = 0; k < len; ++k)
                     {
