@@ -44,9 +44,6 @@ typedef struct cpt_res_packet {
 } CptPacketResponse;
 
 
-typedef struct server_info {
-    ChannelLinkedList *channel_linked_list;
-}ServerInfo;
 
 
 //CPT Server Response Codes
@@ -270,5 +267,7 @@ int cpt_create_channel_response(void * server_info, char * id_list);
  */
 int cpt_send_response(void * server_info);
 
+
+ServerInfo* server_info_init();
 
 #endif //TEMPLATE2_CPT_RESPONSE_H

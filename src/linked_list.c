@@ -154,7 +154,7 @@ int is_user_linked_list_empty(UserLinkedList * pList) {
 
 
 // Channel Linked List
-ChannelLinkedList* create_user_channel_list() {
+ChannelLinkedList* create_channel_linked_list() {
     ChannelLinkedList *pReturn = NULL;
     pReturn = (ChannelLinkedList *)malloc(sizeof(ChannelLinkedList));
 

@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <dc_util/bits.h>
-#include "cpt_response.h"
 
 #define TRUE  1
 #define FALSE 0
@@ -47,6 +46,12 @@ typedef struct channel_linked_list {
     int channel_count;
     ChannelNode headerNode;
 }ChannelLinkedList;
+
+
+typedef struct server_info {
+    ChannelLinkedList* channel_linked_list;
+}ServerInfo;
+
 
 
 UserLinkedList* create_user_linked_list();

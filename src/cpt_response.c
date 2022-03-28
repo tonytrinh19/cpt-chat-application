@@ -2,8 +2,7 @@
 #include "linked_list.h"
 
 
-
-CptResponse * cpt_response_init(uint16_t res_code) {
+CptResponse* cpt_response_init(uint16_t res_code) {
     CptResponse *cpt_res = malloc(sizeof(CptResponse));
 
     if (cpt_res == NULL) {
@@ -361,7 +360,7 @@ int cpt_login_response(void * server_info, char * name) {
  */
 int cpt_logout_response(void * server_info) {
     ServerInfo *SI;
-    SI = (ServerInfo *) server_info;
+    SI = (ServerInfo*) server_info;
 
     if (SI != NULL) {
     }
@@ -384,6 +383,20 @@ int cpt_logout_response(void * server_info) {
 //int cpt_send_response(void * server_info) {
 //
 //}
+
+
+
+
+ServerInfo* server_info_init() {
+    ServerInfo *server_info = malloc(sizeof(ServerInfo));
+
+    if (server_info == NULL) {
+        printf("malloc error: server_info_init()\n");
+    }
+
+    return server_info;
+}
+
 
 
 

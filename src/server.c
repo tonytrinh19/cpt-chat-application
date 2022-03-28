@@ -16,6 +16,7 @@
 #define TRUE             1
 #define FALSE            0
 
+ServerInfo *server_info;
 
 
 int main (int argc, char *argv[])
@@ -29,6 +30,17 @@ int main (int argc, char *argv[])
     int    timeout;
     struct pollfd fds[SOMAXCONN];
     int    nfds = 1, current_size = 0, i, j;
+
+    // Create Server Info //
+    server_info = server_info_init();
+    server_info->channel_linked_list = create_channel_linked_list();
+    ChannelNode channel_node;
+    channel_node.channel_id = 0;
+    add_channel_element(server_info->channel_linked_list, 0, channel_node);
+    server_info->channel_linked_list->headerNode.user_linked_list = create_user_linked_list();
+
+
+
 
     /* Create an AF_INET6 stream socket to receive incoming      */
     /* connections on                                            */
@@ -130,6 +142,15 @@ int main (int argc, char *argv[])
         current_size = nfds;
         for (i = 0; i < current_size; i++)
         {
+//            <ServerInfo>
+//            UserNode user_node;
+//            user_node.user_fd = (uint8_t) fds[i].fd;
+//            add_user_element(server_info->channel_linked_list->headerNode.user_linked_list, i, user_node);
+//            printf("user count = %d\n", server_info->channel_linked_list->headerNode.user_linked_list->user_count);
+//            printf("user id = %d\n", server_info->channel_linked_list->headerNode.user_linked_list->header_node.user_fd);
+//            add_channel_element(server_info->channel_linked_list, 0, );
+//          </ServerInfo>
+
             /* Loop through to find the descriptors that returned    */
             /* POLLIN and determine whether it's the listening       */
             /* or the active connection.                             */
