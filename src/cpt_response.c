@@ -318,23 +318,54 @@ CptResponse * cpt_parse_response(uint8_t * res_buf, size_t res_size) {
 }
 
 
-/**
- * Handle a received 'LOGIN' protocol message.
- *
- * Use information in the CptRequest to handle
- * a LOGIN protocol message from a connected client.
- * If successful, the protocol request will be fulfilled,
- * updating any necessary information contained within
- * <server_info>.
- *
- * @param server_info   Server data structures and information.
- * @param name          Name of user in received Packet MSG field.
- * @return              1 if successful, error code on failure.
- */
+ // server_info will be global variable in server.c (?)
 int cpt_login_response(void * server_info, char * name) {
+    ServerInfo *SI;
+    SI = (ServerInfo*) server_info;
 
+    if (SI != NULL) {
+        int user_count = get_user_linked_list_length(SI->channel_linked_list->headerNode.user_linked_list);
+        SI->channel_linked_list->headerNode.channel_id = 0;
+        UserNode user_node;
+        user_node.user_id = (uint8_t*) strdup(name);
+//        user_node.user_fd =
+
+        if (user_count == 0) {
+            add_user_element(SI->channel_linked_list->headerNode.user_linked_list, 0, user_node);
+            cpt_response_init(1);
+            return 1;
+        }
+        else {
+            add_user_element(SI->channel_linked_list->headerNode.user_linked_list, user_count + 1, user_node);
+            return 1;
+        }
+    }
+
+    // response if error
+    return 0;
 }
 
+
+/**
+ * Handle a received 'LOGOUT' protocol message.
+ *
+ * Uses information in a received CptRequest to handle
+ * a LOGOUT protocol message from a connected client.
+ *
+ * If successful, will remove any instance of the user
+ * specified by the user <id> from the GlobalChannel
+ * and any other relevant data structures.
+ *
+ * @param server_info   Server data structures and information.
+ * @return Status Code (SUCCESS if successful, other if failure).
+ */
+int cpt_logout_response(void * server_info) {
+    ServerInfo *SI;
+    SI = (ServerInfo *) server_info;
+
+    if (SI != NULL) {
+    }
+}
 
 /**
  * Handle a received 'SEND' protocol message.

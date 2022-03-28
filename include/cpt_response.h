@@ -45,8 +45,7 @@ typedef struct cpt_res_packet {
 
 
 typedef struct server_info {
-
-
+    ChannelLinkedList *channel_linked_list;
 }ServerInfo;
 
 

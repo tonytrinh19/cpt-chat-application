@@ -25,7 +25,7 @@
 
 typedef struct user_node {
     uint8_t user_fd;
-    uint8_t user_id;
+    uint8_t *user_id;
     struct user_node *next;
 }UserNode;
 
@@ -38,12 +38,12 @@ typedef struct user_linked_list {
 
 typedef struct channel_node {
     uint16_t channel_id;
-    UserLinkedList user_linked_list;
+    UserLinkedList *user_linked_list;
     struct channel_node *next;
 }ChannelNode;
 
 
-typedef struct channel_node_type {
+typedef struct channel_linked_list {
     int channel_count;
     ChannelNode headerNode;
 }ChannelLinkedList;
