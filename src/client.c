@@ -15,7 +15,7 @@
 #define FALSE              0
 #define TRUE               1
 #define MSG_MAX_LEN     65536
-#define SERVER_NAME     "10.0.0.169"
+#define SERVER_NAME     "10.65.14.202"
 // 10.0.0.169
 // school: 10.65.0.209, 10.65.15.72
 
@@ -25,18 +25,15 @@ static size_t get_size_for_serialized_request_buffer(const CptRequest *request) 
     return num;
 }
 
-struct items
-{
+struct items {
     int sd;
     int count;
 };
 
 static void *listeningThread(void *args) {
     struct items *items = (struct items *) args;
-    if (items->count == 0)
-    {
-        while(TRUE)
-        {
+    if (items->count == 0) {
+        while (TRUE) {
             char buffer[BUFFER_LENGTH];
             int rc;
             rc = recv(items->sd, buffer,
