@@ -23,33 +23,23 @@
 #define FALSE 0
 
 
-typedef struct user_struct {
-    uint8_t user_id;
+typedef struct user_node {
     uint8_t user_fd;
-}User;
-
-
-typedef struct channel_struct {
-    uint16_t channel_id;
-}Channel;
-
-
-
-typedef struct user_node_struct {
-    User data;
-    struct user_node *pLink;
+    uint8_t user_id;
+    struct user_node *next;
 }UserNode;
 
 
-typedef struct user_node_type {
+typedef struct user_linked_list {
     int user_count;
-    UserNode headerNode;
+    UserNode header_node;
 }UserLinkedList;
 
 
-typedef struct channel_node_struct {
-    Channel data;
-    struct channel_node *pLink;
+typedef struct channel_node {
+    uint16_t channel_id;
+    UserLinkedList user_linked_list;
+    struct channel_node *next;
 }ChannelNode;
 
 
