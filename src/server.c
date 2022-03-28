@@ -81,8 +81,7 @@ int main (int argc, char *argv[])
     addr.sin6_family      = AF_INET6;
     memcpy(&addr.sin6_addr, &in6addr_any, sizeof(in6addr_any));
     addr.sin6_port        = htons(SERVER_PORT);
-    rc = bind(listen_sd,
-              (struct sockaddr *)&addr, sizeof(addr));
+    rc = bind(listen_sd, (struct sockaddr *)&addr, sizeof(addr));
     if (rc < 0)
     {
         perror("bind() failed");
@@ -140,15 +139,15 @@ int main (int argc, char *argv[])
         /* One or more descriptors are readable.  Need to          */
         /* determine which ones they are.                          */
         current_size = nfds;
-        for (i = 0; i < current_size; i++)
+        for (i = 0; i < current_size; i++)  // current_size = 1
         {
+            printf("current size: %d\n", current_size);
 //            <ServerInfo>
 //            UserNode user_node;
 //            user_node.user_fd = (uint8_t) fds[i].fd;
 //            add_user_element(server_info->channel_linked_list->headerNode.user_linked_list, i, user_node);
 //            printf("user count = %d\n", server_info->channel_linked_list->headerNode.user_linked_list->user_count);
 //            printf("user id = %d\n", server_info->channel_linked_list->headerNode.user_linked_list->header_node.user_fd);
-//            add_channel_element(server_info->channel_linked_list, 0, );
 //          </ServerInfo>
 
             /* Loop through to find the descriptors that returned    */
@@ -161,6 +160,9 @@ int main (int argc, char *argv[])
             /* log and end the server.                               */
 
             /** Mac OS server won't crash if use "events" rather than "events" */
+//            printf("fds[i].events = %d\n", fds[i].events);
+//            printf("fds[i].revents = %d\n", fds[i].revents);
+//            printf("POLLIN = %d\n", POLLIN);
 //            if(fds[i].events != POLLIN)
             if(fds[i].revents != POLLIN)
             {
@@ -241,11 +243,14 @@ int main (int argc, char *argv[])
                         break;
                     }
 
-                    /* Data was received                                 */
-                    CptResponse * res = cpt_response_init(1);
 
+
+
+                    /* Amount of data received from user */
                     len = rc;
-                    printf("  %d bytes received\n", len);
+                    printf("  %d bytes received from user_id(%d)\n", len, fds[i].fd);
+
+
                     CptRequest * req = cpt_parse_request((uint8_t *) buffer, len);
                     printf("MESSAGE: %s\n", req->msg);
                     /* Echo the data back to the client                  */
@@ -253,15 +258,12 @@ int main (int argc, char *argv[])
 //                    rc = send(fds[i].fd, buffer, len, 0);
                     rc = send(fds[i].fd, req->msg, req->msg_len, 0);
 
-                    if (rc < 0)
-                    {
-                        perror("  send() failed");
-                        close_conn = TRUE;
-                        break;
-                    }
 
-                    rc = send(fds[i].fd, res->data, res->data_size, 0);
 
+                    /** login */
+//                    if (req->cmd_code == 7) {
+//                        cpt_login_response(server_info, req)
+//                    }
 
                     if (rc < 0)
                     {
@@ -269,6 +271,18 @@ int main (int argc, char *argv[])
                         close_conn = TRUE;
                         break;
                     }
+
+                    /* Data was received                                 */
+//                    CptResponse * res = cpt_response_init(1);
+//                    rc = send(fds[i].fd, res->data, res->data_size, 0);
+//
+//
+//                    if (rc < 0)
+//                    {
+//                        perror("  send() failed");
+//                        close_conn = TRUE;
+//                        break;
+//                    }
 
                     cpt_request_destroy(req);
                 } while(FALSE);

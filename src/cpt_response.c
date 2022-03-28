@@ -362,8 +362,9 @@ int cpt_logout_response(void * server_info) {
     ServerInfo *SI;
     SI = (ServerInfo*) server_info;
 
-    if (SI != NULL) {
-    }
+//    if (SI != NULL) {
+//        delete_user_linked_list(SI->channel_linked_list, i)
+//    }
 }
 
 /**
