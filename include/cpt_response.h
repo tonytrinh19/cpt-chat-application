@@ -33,18 +33,6 @@ typedef struct cpt_msg_response {
     char* msg;
 } CptMsgResponse;
 
-
-typedef struct cpt_request {
-    uint8_t version;
-    uint8_t cmd_code;
-    uint16_t channel_id;
-    uint16_t msg_len;
-    char *msg;
-}CptRequest;
-
-
-
-
 //CPT Server Response Codes
 #define SUCCESS 1                // Operation was successful
 #define MESSAGE 2                // The channel id is in the CHAN_ID, msg contents are a message sub-packet
@@ -70,8 +58,6 @@ typedef struct cpt_request {
 #define UNAUTH_ACCESS 22         // Access to resources is forbidden
 #define SERVER_FULL 23           // Server at maximum capacity
 #define RESERVED = 255           // Reserved for future CMDs
-
-
 
 /**
  * Initialize CptResponse server-side packet.
@@ -154,7 +140,7 @@ size_t cpt_serialize_msg(CptMsgResponse * msg_res, uint8_t * buffer);
 * @param packet    A serialized cpt protocol message.
 * @return A pointer to a cpt struct.
 */
-CptRequest * cpt_parse_response(uint8_t * req_buf, size_t req_size);
+CptResponse * cpt_parse_response(uint8_t * req_buf, size_t req_size);
 
 
 /**

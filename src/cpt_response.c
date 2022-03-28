@@ -321,42 +321,42 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 }
 
 
-CptRequest * cpt_parse_response(uint8_t * req_buf, size_t req_size) {
-
-    if (req_buf == NULL) {
-        return NULL;
-    }
-
-    CptRequest *cpt_req = malloc(req_size);
-
-    if (cpt_req == NULL) {
-        printf("malloc error: cpt_parse_request()\n");
-        return NULL;
-    }
-
-    else {
-        cpt_req->version = *(req_buf++);
-        cpt_req->cmd_code = *(req_buf++);
-
-        // channel_id (16)
-        uint16_t first_half_channel_id = *req_buf++;
-        uint16_t second_half_channel_id = *req_buf++;
-        cpt_req->channel_id = first_half_channel_id + second_half_channel_id;
-
-        // msg_len (16)
-        uint16_t first_half_msg_len = *req_buf++;
-        uint16_t second_half_msg_len = *req_buf++;
-        cpt_req->msg_len = first_half_msg_len + second_half_msg_len;
-
-        //msg
-        for (int i = 0; i < cpt_req->msg_len; ++i)
-        {
-            cpt_req->msg[i] = (char) *(req_buf++);
-        }
-    }
-
-    return cpt_req;
-}
+//CptResponse * cpt_parse_response(uint8_t * req_buf, size_t req_size) {
+//
+//    if (req_buf == NULL) {
+//        return NULL;
+//    }
+//
+//    CptResponse *cpt_req = malloc(req_size);
+//
+//    if (cpt_req == NULL) {
+//        printf("malloc error: cpt_parse_request()\n");
+//        return NULL;
+//    }
+//
+//    else {
+//        cpt_req->version = *(req_buf++);
+//        cpt_req->cmd_code = *(req_buf++);
+//
+//        // channel_id (16)
+//        uint16_t first_half_channel_id = *req_buf++;
+//        uint16_t second_half_channel_id = *req_buf++;
+//        cpt_req->channel_id = first_half_channel_id + second_half_channel_id;
+//
+//        // msg_len (16)
+//        uint16_t first_half_msg_len = *req_buf++;
+//        uint16_t second_half_msg_len = *req_buf++;
+//        cpt_req->msg_len = first_half_msg_len + second_half_msg_len;
+//
+//        //msg
+//        for (int i = 0; i < cpt_req->msg_len; ++i)
+//        {
+//            cpt_req->msg[i] = (char) *(req_buf++);
+//        }
+//    }
+//
+//    return cpt_req;
+//}
 
 
 /**
