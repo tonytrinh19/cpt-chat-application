@@ -180,10 +180,13 @@ int main(int argc, char *argv[]) {
                     }
 
                     /* Data was received                                 */
+
                     len = rc;
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
+                    CptResponse * res = cpt_response_init(1, req);
+
                     printf("MESSAGE: %s\n", req->msg);
                     for (int conn = 1; conn < current_size; ++conn) {
                         rc = send(fds[conn].fd, req->msg, req->msg_len, 0);
@@ -193,9 +196,19 @@ int main(int argc, char *argv[]) {
                             close_conn = TRUE;
                             break;
                         }
+
+                        rc = send(fds[i].fd, res->data, res->data_size, 0);
+
+                        if (rc < 0)
+                        {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                            break;
+                        }
                     }
 
                     cpt_request_destroy(req);
+                    cpt_response_destroy(res);
                 } while (FALSE);
 
                 if (close_conn) {

@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <dc_util/bits.h>
 #include "linked_list.h"
+#include "cpt_request_builder.h"
 
 
 typedef struct cpt_response {
@@ -80,7 +81,7 @@ typedef struct cpt_res_packet {
  * @param res_code    Received client-side packet.
  * @return CptResponse object.
  */
-CptResponse * cpt_response_init(uint16_t res_code);
+CptResponse * cpt_response_init(uint16_t res_code, CptRequest *cpt_req);
 
 
 /**

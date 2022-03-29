@@ -15,7 +15,7 @@
 #define FALSE              0
 #define TRUE               1
 #define MSG_MAX_LEN     65536
-#define SERVER_NAME     "10.65.14.202"
+#define SERVER_NAME     "192.168.1.119"
 // 10.0.0.169
 // school: 10.65.0.209, 10.65.15.72
 
