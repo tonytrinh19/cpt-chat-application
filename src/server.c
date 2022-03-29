@@ -189,17 +189,32 @@ int main(int argc, char *argv[]) {
                     if (req->version != 3) // current version
                     {
                         cpt_response_code(res, req, BAD_VERSION);
+                        rc = send(fds[i].fd, res->data, res->data_size, 0);
+                        if (rc < 0) {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                            break;
+                        }
+
                     }
 
                     if (req->channel_id != 0) // only checks for global channel at the moment
                     {
                         cpt_response_code(res, req, UKNOWN_CHANNEL);
+                        rc = send(fds[i].fd, res->data, res->data_size, 0);
+                        if (rc < 0) {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                            break;
+                        }
+
                     }
 
                     printf("MESSAGE: %s\n", req->msg);
 
                     // If it SEND then it's good
                     if (req->cmd_code != SEND) {
+                        cpt_response_code(res, req, UKNOWN_CMD);
                         rc = send(fds[i].fd, res->data, res->data_size, 0);
 
                         if (rc < 0) {
