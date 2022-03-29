@@ -17,14 +17,6 @@
 #define TRUE             1
 #define FALSE            0
 
-
-//    server_info = server_info_init();
-//    server_info->channel_linked_list = create_channel_linked_list();
-//    ChannelNode channel_node;
-//    channel_node.channel_id = 0;
-//    channel_node.user_linked_list = create_user_linked_list();
-//    add_channel_element(server_info->channel_linked_list, 0, channel_node);
-
 int main(int argc, char *argv[]) {
     int len, rc, on = 1;
     int listen_sd = -1, new_sd = -1;
