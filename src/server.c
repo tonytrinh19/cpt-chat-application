@@ -10,7 +10,6 @@
 #include <string.h>
 #include "cpt_response.h"
 #include "cpt_request_builder.h"
-#include <math.h>
 
 #define SERVER_PORT  8000
 
@@ -226,18 +225,8 @@ int main(int argc, char *argv[]) {
                         cpt_response_code(res, req, SUCCESS);
                         for (int conn = 1; conn < current_size; ++conn) {
                             if (conn != i) {
-                                int user_id = fds[conn].fd;
-                                int sender_id = fds[i].fd;
-                                int nDigits = (int) (floor(log10(abs(sender_id))) + 1);
-                                // + 2 for " :" delimiter
-                                int data_len = nDigits + res->data_size + 2;
-                                char *fds_str = (char *) malloc((unsigned long) data_len);
+                                rc = send(fds[conn].fd, res->data, res->data_size, 0);
 
-                                sprintf(fds_str, "%d :", sender_id);
-                                strcat(fds_str, (char *) res->data);
-
-                                rc = send(user_id, (uint8_t *) fds_str, data_len, 0);
-                                free(fds_str);
                                 if (rc < 0) {
                                     perror("  send() failed");
                                     close_conn = TRUE;
