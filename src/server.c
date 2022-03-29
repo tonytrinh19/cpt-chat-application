@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     int listen_sd = -1, new_sd = -1;
     int desc_ready, end_server = FALSE, compress_array = FALSE;
     int close_conn;
-    char buffer[BUFSIZ];
+    char buffer[MSG_MAX_LEN];
     struct sockaddr_in6 addr;
     int timeout;
     struct pollfd fds[SOMAXCONN];
@@ -211,7 +211,6 @@ int main(int argc, char *argv[]) {
                         for (int conn = 1; conn < current_size; ++conn) {
                             if (conn != i) {
                                 rc = send(fds[conn].fd, res->data, res->data_size, 0);
-
                                 if (rc < 0) {
                                     perror("  send() failed");
                                     close_conn = TRUE;
