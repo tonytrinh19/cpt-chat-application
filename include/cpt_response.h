@@ -33,7 +33,6 @@ typedef struct cpt_msg_response {
     char* msg;
 } CptMsgResponse;
 
-
 typedef struct cpt_res_packet {
     uint8_t code;
     uint16_t data_size;
@@ -42,9 +41,6 @@ typedef struct cpt_res_packet {
     uint16_t msg_len;
     char* msg;
 } CptPacketResponse;
-
-
-
 
 //CPT Server Response Codes
 #define SUCCESS 1                // Operation was successful

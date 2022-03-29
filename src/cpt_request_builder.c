@@ -144,7 +144,6 @@ CptRequest * cpt_parse_request(uint8_t * req_buf, int size)
 
     for (int i = 0; i < req->msg_len; ++i)
     {
-        // BRUH
         req->msg[i] = (char) *(req_buf++);
     }
 

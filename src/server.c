@@ -52,11 +52,6 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    /*************************************************************/
-    /* Set socket to be nonblocking. All of the sockets for      */
-    /* the incoming connections will also be nonblocking since   */
-    /* they will inherit that state from the listening socket.   */
-    /*************************************************************/
     rc = ioctl(listen_sd, FIONBIO, (char *) &on);
     if (rc < 0) {
         perror("ioctl() failed");
@@ -76,9 +71,6 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    /*************************************************************/
-    /* Set the listen back log                                   */
-    /*************************************************************/
     rc = listen(listen_sd, SOMAXCONN);
     if (rc < 0) {
         perror("listen() failed");
@@ -86,14 +78,8 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    /*************************************************************/
-    /* Initialize the pollfd structure                           */
-    /*************************************************************/
     memset(fds, 0, sizeof(fds));
 
-    /*************************************************************/
-    /* Set up the initial listening socket                        */
-    /*************************************************************/
     fds[0].fd = listen_sd;
     fds[0].events = POLLIN;
 
@@ -166,8 +152,6 @@ int main(int argc, char *argv[]) {
                 } while (new_sd != -1);
             }
 
-                /* This is not the listening socket, therefore an        */
-                /* existing connection must be readable                  */
             else {
                 printf("  Descriptor %d is readable\n", fds[i].fd);
                 close_conn = FALSE;
@@ -201,10 +185,6 @@ int main(int argc, char *argv[]) {
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
                     printf("MESSAGE: %s\n", req->msg);
-                    /* Echo the data back to the client                  */
-                    // Parse and send message to the destination.
-//                    rc = send(fds[i].fd, buffer, len, 0);
-
                     for (int conn = 1; conn < current_size; ++conn) {
                         rc = send(fds[conn].fd, req->msg, req->msg_len, 0);
 
@@ -218,10 +198,6 @@ int main(int argc, char *argv[]) {
                     cpt_request_destroy(req);
                 } while (FALSE);
 
-                /* If the close_conn flag was turned on, we need       */
-                /* to clean up this active connection. This            */
-                /* clean up process includes removing the              */
-                /* descriptor.                                         */
                 if (close_conn) {
                     close(fds[i].fd);
                     fds[i].fd = -1;
@@ -232,11 +208,6 @@ int main(int argc, char *argv[]) {
             }  /* End of existing connection is readable             */
         } /* End of loop through pollable descriptors              */
 
-        /* If the compress_array flag was turned on, we need       */
-        /* to squeeze together the array and decrement the number  */
-        /* of file descriptors. We do not need to move back the    */
-        /* events and revents fields because the events will always*/
-        /* be POLLIN in this case, and revents is output.          */
         if (compress_array) {
             compress_array = FALSE;
             for (i = 0; i < nfds; i++) {
