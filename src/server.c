@@ -150,9 +150,7 @@ int main(int argc, char *argv[]) {
                     /* Loop back up and accept another incoming          */
                     /* connection                                        */
                 } while (new_sd != -1);
-            }
-
-            else {
+            } else {
                 printf("  Descriptor %d is readable\n", fds[i].fd);
                 close_conn = FALSE;
                 /* Receive all incoming data on this socket            */
@@ -180,30 +178,46 @@ int main(int argc, char *argv[]) {
                     }
 
                     /* Data was received                                 */
-
                     len = rc;
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
-                    CptResponse * res = cpt_response_init(1, req);
+                    CptResponse *res = cpt_response_init();
+
+                    // func_set_error_res(res);
+                    if (req->version != 3) // current version
+                    {
+                        cpt_response_code(res, req, BAD_VERSION);
+                    }
+
+                    if (req->channel_id != 0) // only checks for global channel at the moment
+                    {
+                        cpt_response_code(res, req, UKNOWN_CHANNEL);
+                    }
 
                     printf("MESSAGE: %s\n", req->msg);
-                    for (int conn = 1; conn < current_size; ++conn) {
-                        rc = send(fds[conn].fd, req->msg, req->msg_len, 0);
+
+                    // If it SEND then it's good
+                    if (req->cmd_code != SEND) {
+                        rc = send(fds[i].fd, res->data, res->data_size, 0);
 
                         if (rc < 0) {
                             perror("  send() failed");
                             close_conn = TRUE;
                             break;
                         }
+                    } else {
+                        cpt_response_code(res, req, SUCCESS);
+                        for (int conn = 1; conn < current_size; ++conn) {
+                            if (conn != i) {
+                                rc = send(fds[conn].fd, res->data, res->data_size, 0);
 
-                        rc = send(fds[i].fd, res->data, res->data_size, 0);
-
-                        if (rc < 0)
-                        {
-                            perror("  send() failed");
-                            close_conn = TRUE;
-                            break;
+                                if (rc < 0) {
+                                    perror("  send() failed");
+                                    close_conn = TRUE;
+                                    break;
+                                }
+                            }
                         }
                     }
 
@@ -216,8 +230,6 @@ int main(int argc, char *argv[]) {
                     fds[i].fd = -1;
                     compress_array = TRUE;
                 }
-
-
             }  /* End of existing connection is readable             */
         } /* End of loop through pollable descriptors              */
 

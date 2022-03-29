@@ -103,9 +103,9 @@ int main(int argc, char *argv[]) {
         // An infinite loop that listens for user's keyboard and send the message
         while (TRUE) {
             // Take input from client and send it to the server
-            request->version = 13;
-            request->cmd_code = 100;
-            request->channel_id = 25739;
+            request->version = 3; // Version 3
+            request->cmd_code = SEND; // SEND Message
+            request->channel_id = 0; // Global channel
             char message[MSG_MAX_LEN];
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
