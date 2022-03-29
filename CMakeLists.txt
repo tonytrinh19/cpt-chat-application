@@ -10,10 +10,18 @@ project(template2
 
 set(HEADER_LIST
         "${template2_SOURCE_DIR}/include/common.h"
+        "${template2_SOURCE_DIR}/include/cpt_request_builder.h"
+        "${template2_SOURCE_DIR}/include/cpt_client.h"
+        "${template2_SOURCE_DIR}/include/users.h"
+        "${template2_SOURCE_DIR}/include/linked_list.h"
         )
 
 set(COMMON_SOURCE_LIST
         "${template2_SOURCE_DIR}/src/common.c"
+        "${template2_SOURCE_DIR}/src/cpt_request_builder.c"
+        "${template2_SOURCE_DIR}/src/cpt_client.c"
+        "${template2_SOURCE_DIR}/src/users.c"
+        "${template2_SOURCE_DIR}/src/linked_list.c"
         )
 
 set(SERVER_SOURCE_LIST
@@ -29,6 +37,8 @@ set(SERVER_MAIN_SOURCE
 set(CLIENT_MAIN_SOURCE
         "${template2_SOURCE_DIR}/src/client.c"
         )
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15.6")
 
 ### Require out-of-source builds
 # this still creates a CMakeFiles directory and CMakeCache.txt- can we delete them?
