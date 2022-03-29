@@ -10,12 +10,8 @@
 #include <pthread.h>
 #include "cpt_request_builder.h"
 
-#define SERVER_PORT     8000
-#define BUFFER_LENGTH    400
-#define FALSE              0
-#define TRUE               1
-#define MSG_MAX_LEN     65536
-#define SERVER_NAME     "192.168.1.119"
+
+#define SERVER_NAME     "10.65.14.202"
 // 10.0.0.169
 // school: 10.65.0.209, 10.65.15.72
 
@@ -28,7 +24,7 @@ static size_t get_size_for_serialized_request_buffer(const CptRequest *request) 
 static void *listeningThread(void *args) {
     int *sd = (int *) args;
     while (TRUE) {
-        char buffer[BUFFER_LENGTH];
+        char buffer[MSG_MAX_LEN];
         int rc;
         rc = recv(*sd, buffer,
                   sizeof(buffer), 0);

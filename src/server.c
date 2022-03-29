@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     int listen_sd = -1, new_sd = -1;
     int desc_ready, end_server = FALSE, compress_array = FALSE;
     int close_conn;
-    char buffer[BUFSIZ];
+    char buffer[MSG_MAX_LEN];
     struct sockaddr_in6 addr;
     int timeout;
     struct pollfd fds[SOMAXCONN];

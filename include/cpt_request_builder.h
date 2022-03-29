@@ -7,6 +7,11 @@
 
 #include <netinet/in.h>
 
+#define SERVER_PORT     8000
+#define BUFFER_LENGTH    400
+#define FALSE              0
+#define TRUE               1
+#define MSG_MAX_LEN     65536
 enum CMD {
     SEND = 1,
     LOGOUT,
