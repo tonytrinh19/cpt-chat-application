@@ -18,13 +18,11 @@
 #include <dc_util/bits.h>
 #include "linked_list.h"
 
-
 typedef struct cpt_response {
     uint8_t code;
     uint16_t data_size;
     uint8_t* data;
 } CptResponse;
-
 
 typedef struct cpt_msg_response {
     uint16_t channel_id;
@@ -32,6 +30,15 @@ typedef struct cpt_msg_response {
     uint16_t msg_len;
     char* msg;
 } CptMsgResponse;
+
+typedef struct cpt_res_packet {
+    uint8_t code;
+    uint16_t data_size;
+    uint16_t channel_id;
+    uint16_t user_id;
+    uint16_t msg_len;
+    char* msg;
+} CptPacketResponse;
 
 //CPT Server Response Codes
 #define SUCCESS 1                // Operation was successful
@@ -58,6 +65,8 @@ typedef struct cpt_msg_response {
 #define UNAUTH_ACCESS 22         // Access to resources is forbidden
 #define SERVER_FULL 23           // Server at maximum capacity
 #define RESERVED = 255           // Reserved for future CMDs
+
+
 
 /**
  * Initialize CptResponse server-side packet.
@@ -132,6 +141,15 @@ size_t cpt_serialize_response(CptResponse * req, uint8_t * buffer);
 * @return       Size of the serialized packet.
 */
 size_t cpt_serialize_msg(CptMsgResponse * msg_res, uint8_t * buffer);
+
+
+/**
+* Serialize a CptResponse & CptMsgResponse response sub-packet object.
+*
+* @param cpt    A CptResponse object.
+* @return       Size of the serialized packet.
+*/
+size_t cpt_serialize_packet(CptPacketResponse * res, uint8_t * buffer);
 
 
 /**
@@ -243,5 +261,7 @@ int cpt_create_channel_response(void * server_info, char * id_list);
  */
 int cpt_send_response(void * server_info);
 
+
+ServerInfo* server_info_init();
 
 #endif //TEMPLATE2_CPT_RESPONSE_H

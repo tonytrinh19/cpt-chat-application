@@ -6,15 +6,13 @@
 #define TEMPLATE2_CPT_REQUEST_BUILDER_H
 #include <netinet/in.h>
 
-typedef struct cpt_request CptRequest;
-
-struct cpt_request {
+typedef struct cpt_request {
     uint8_t version;
     uint8_t cmd_code;
     uint16_t channel_id;
     uint16_t msg_len;
     char *msg;
-};
+} CptRequest;
 
 /**
 * Initialize cpt struct.

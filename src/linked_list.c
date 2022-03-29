@@ -34,15 +34,15 @@ int add_user_element(UserLinkedList *pList, int position, UserNode element) {
             pNewNode = (UserNode *)malloc(sizeof(UserNode));
             if (pNewNode != NULL) {
                 *pNewNode = element;
-                pNewNode->pLink = NULL;
+                pNewNode->next = NULL;
 
-                pPreNode = &(pList->headerNode);
+                pPreNode = &(pList->header_node);
                 for (i = 0; i < position; i++) {
-                    pPreNode = (ChannelNode *) pPreNode->pLink;
+                    pPreNode = (ChannelNode *) pPreNode->next;
                 }
 
-                pNewNode->pLink = pPreNode->pLink;
-                pPreNode->pLink = pNewNode;
+                pNewNode->next = pPreNode->next;
+                pPreNode->next = pNewNode;
 
                 pList->user_count++;
 
@@ -71,13 +71,13 @@ int remove_user_element (UserLinkedList *pList, int position) {
     if (pList != NULL) {
         arrayCount = get_user_linked_list_length(pList);
         if (position >= 0 && position < arrayCount) {
-            pPreNode = &(pList->headerNode);
+            pPreNode = &(pList->header_node);
             for (i = 0; i < position; i++) {
-                pPreNode = pPreNode->pLink;
+                pPreNode = pPreNode->next;
             }
 
-            pDelNode = pPreNode->pLink;
-            pPreNode->pLink = pDelNode->pLink;
+            pDelNode = pPreNode->next;
+            pPreNode->next = pDelNode->next;
             free(pDelNode);
 
             pList->user_count--;
@@ -99,9 +99,9 @@ UserNode* get_user_element(UserLinkedList *pList, int position) {
 
     if (pList != NULL) {
         if (position >= 0 && position < pList->user_count) {
-            pNode = &(pList->headerNode);
+            pNode = &(pList->header_node);
             for (int i = 0; i <= position; i++) {
-                pNode = pNode->pLink;
+                pNode = pNode->next;
             }
             pReturn = pNode;
         }
@@ -154,7 +154,7 @@ int is_user_linked_list_empty(UserLinkedList * pList) {
 
 
 // Channel Linked List
-ChannelLinkedList* create_user_channel_list() {
+ChannelLinkedList* create_channel_linked_list() {
     ChannelLinkedList *pReturn = NULL;
     pReturn = (ChannelLinkedList *)malloc(sizeof(ChannelLinkedList));
 
@@ -183,15 +183,15 @@ int add_channel_element(ChannelLinkedList *pList, int position, ChannelNode elem
             pNewNode = (ChannelNode *)malloc(sizeof(ChannelNode));
             if (pNewNode != NULL) {
                 *pNewNode = element;
-                pNewNode->pLink = NULL;
+                pNewNode->next = NULL;
 
                 pPreNode = &(pList->headerNode);
                 for (i = 0; i < position; i++) {
-                    pPreNode = (ChannelNode *) pPreNode->pLink;
+                    pPreNode = (ChannelNode *) pPreNode->next;
                 }
 
-                pNewNode->pLink = pPreNode->pLink;
-                pPreNode->pLink = pNewNode;
+                pNewNode->next = pPreNode->next;
+                pPreNode->next = pNewNode;
 
                 pList->channel_count++;
 
@@ -222,11 +222,11 @@ int remove_channel_element (ChannelLinkedList *pList, int position) {
         if (position >= 0 && position < arrayCount) {
             pPreNode = &(pList->headerNode);
             for (i = 0; i < position; i++) {
-                pPreNode = pPreNode->pLink;
+                pPreNode = pPreNode->next;
             }
 
-            pDelNode = pPreNode->pLink;
-            pPreNode->pLink = pDelNode->pLink;
+            pDelNode = pPreNode->next;
+            pPreNode->next = pDelNode->next;
             free(pDelNode);
 
             pList->channel_count--;
@@ -250,7 +250,7 @@ ChannelNode* get_channel_element(ChannelLinkedList *pList, int position) {
         if (position >= 0 && position < pList->channel_count) {
             pNode = &(pList->headerNode);
             for (int i = 0; i <= position; i++) {
-                pNode = pNode->pLink;
+                pNode = pNode->next;
             }
             pReturn = pNode;
         }

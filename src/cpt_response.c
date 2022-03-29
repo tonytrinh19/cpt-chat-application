@@ -1,6 +1,8 @@
 #include "cpt_response.h"
+#include "linked_list.h"
 
-CptResponse * cpt_response_init(uint16_t res_code) {
+
+CptResponse* cpt_response_init(uint16_t res_code) {
     CptResponse *cpt_res = malloc(sizeof(CptResponse));
 
     if (cpt_res == NULL) {
@@ -12,7 +14,7 @@ CptResponse * cpt_response_init(uint16_t res_code) {
 
     switch (res_code) {
         case SUCCESS:    // 1
-            cpt_res->data = (uint8_t *) strdup("Operation was successful\n");
+            cpt_res->data = (uint8_t *) strdup(" (Operation was successful)");
             cpt_res->data_size = (uint16_t) strlen((const char *) cpt_res->data);
             break;
         case MESSAGE:    // 2
@@ -158,97 +160,6 @@ void cpt_msg_response_destroy(CptMsgResponse * msg_res) {
 }
 
 
-/*********
- * ver. 1 *
- *********/
-//size_t cpt_serialize_response(CptResponse * res, uint8_t * buffer) {
-//    size_t serialize_res_size;
-//    char* binary_code = to_binary_string_8(res->code);
-//    char* binary_data = to_binary_string_8(res->data);
-//
-//    char* code_string = strdup(binary_code);
-//    char* data_string = strdup(binary_data);
-//
-//    char* string = malloc(sizeof(char) * 16);
-//
-//    strcat(string, code_string);
-//    strcat(string, data_string);
-//
-//    free(binary_code);
-//    free(binary_data);
-//    free(code_string);
-//    free(data_string);
-//
-//    buffer = (uint8_t *) strdup(string);
-//    serialize_res_size = 2;
-//
-//    return serialize_res_size;
-//}
-//
-//
-//size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
-//    size_t serialize_msg_size;
-//    char* binary_channel_id = to_binary_string_16(res->channel_id);
-//    char* binary_user_id = to_binary_string_16(res->user_id);
-//    char* binary_msg_len = to_binary_string_16(res->msg_len);
-//
-//    char* channel_id_string = strdup(binary_channel_id);
-//    char* user_id_string = strdup(binary_user_id);
-//    char* msg_len_string = strdup(binary_msg_len);
-//
-//    char* string = malloc(sizeof(char) * 48 + res->msg_len);
-//
-//    strcat(string, channel_id_string);
-//    strcat(string, user_id_string);
-//    strcat(string, msg_len_string);
-//    strcat(string, res->msg);
-//
-//    free(binary_channel_id);
-//    free(binary_user_id);
-//    free(binary_msg_len);
-//    free(channel_id_string);
-//    free(user_id_string);
-//    free(msg_len_string);
-//
-//    buffer = (uint8_t *) strdup(string);
-////    printf("%s", buffer);
-//    serialize_msg_size = 6 + res->msg_len;
-//
-//    return serialize_msg_size;
-//}
-//
-//
-//
-//char* to_binary_string_8(uint8_t number) {
-//    int num_bits = 8;
-//    char *string = malloc(num_bits + 1);
-//
-//    for (int i = num_bits - 1; i >= 0; i--) {
-//        string[i] = (number & 1) + '0';
-//        number >>= 1;
-//    }
-//    string[num_bits] = '\0';
-//    return string;
-//}
-//
-//
-//char* to_binary_string_16(uint16_t number) {
-//    int num_bits = 16;
-//    char *string = malloc(num_bits + 1);
-//
-//    for (int i = num_bits - 1; i >= 0; i--) {
-//        string[i] = (number & 1) + '0';
-//        number >>= 1;
-//    }
-//    string[num_bits] = '\0';
-//    return string;
-//}
-
-
-
-/*********
- * ver 2 *
- *********/
 size_t cpt_serialize_response(CptResponse * res, uint8_t * buffer) {
     //uint8_t code, uint16_t data_size, uint8_t* data;
 
@@ -261,8 +172,8 @@ size_t cpt_serialize_response(CptResponse * res, uint8_t * buffer) {
     *(buffer++) = res->code;
 
     uint16_t first_half_data_size  = res->data_size;
-    first_half_data_size >>= 8;
     uint16_t second_half_data_size  = first_half_data_size & 255;
+    first_half_data_size >>= 8;
 
     *(buffer++) = (uint8_t) first_half_data_size;
     *(buffer++) = (uint8_t) second_half_data_size;
@@ -288,16 +199,16 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 
     //channel_id
     uint16_t first_half_channel_id  = res->channel_id;
-    first_half_channel_id >>= 8;
     uint16_t second_half_channel_id = first_half_channel_id & 255;
+    first_half_channel_id >>= 8;
 
     *(buffer++) = (uint8_t) first_half_channel_id;
     *(buffer++) = (uint8_t) second_half_channel_id;
 
     //user_id
     uint16_t first_half_user_id  = res->user_id;
-    first_half_user_id >>= 8;
     uint16_t second_half_user_id = first_half_user_id & 255;
+    first_half_user_id >>= 8;
 
     *(buffer++) = (uint8_t) first_half_user_id;
     *(buffer++) = (uint8_t) second_half_user_id;
@@ -305,8 +216,8 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 
     //msg_len
     uint16_t first_half_msg_len = res->msg_len;
-    first_half_msg_len >>= 8;
     uint16_t second_half_msg_len = first_half_msg_len & 255;
+    first_half_msg_len >>= 8;
 
     *(buffer++) = (uint8_t) first_half_msg_len;
     *(buffer++) = (uint8_t) second_half_msg_len;
@@ -321,61 +232,139 @@ size_t cpt_serialize_msg(CptMsgResponse * res, uint8_t * buffer) {
 }
 
 
-//CptResponse * cpt_parse_response(uint8_t * req_buf, size_t req_size) {
-//
-//    if (req_buf == NULL) {
-//        return NULL;
-//    }
-//
-//    CptResponse *cpt_req = malloc(req_size);
-//
-//    if (cpt_req == NULL) {
-//        printf("malloc error: cpt_parse_request()\n");
-//        return NULL;
-//    }
-//
-//    else {
-//        cpt_req->version = *(req_buf++);
-//        cpt_req->cmd_code = *(req_buf++);
-//
-//        // channel_id (16)
-//        uint16_t first_half_channel_id = *req_buf++;
-//        uint16_t second_half_channel_id = *req_buf++;
-//        cpt_req->channel_id = first_half_channel_id + second_half_channel_id;
-//
-//        // msg_len (16)
-//        uint16_t first_half_msg_len = *req_buf++;
-//        uint16_t second_half_msg_len = *req_buf++;
-//        cpt_req->msg_len = first_half_msg_len + second_half_msg_len;
-//
-//        //msg
-//        for (int i = 0; i < cpt_req->msg_len; ++i)
-//        {
-//            cpt_req->msg[i] = (char) *(req_buf++);
-//        }
-//    }
-//
-//    return cpt_req;
-//}
+size_t cpt_serialize_packet(CptPacketResponse * res, uint8_t * buffer) {
+    // uint8_t code | uint16_t data_size | uint16_t channel_id | uint16_t user_id | uint16_t msg_len | char* msg
+    // 1 + 2 + 2 + 2 + 2
+    size_t count = 9;
+    uint8_t *temp = buffer;
+    char *msg = res->msg;
+
+    *(buffer++) = res->code;
+
+    // uint16_t data_size
+    uint16_t first_half_data_size  = res->data_size;
+    uint16_t second_half_data_size  = first_half_data_size & 255;
+    first_half_data_size >>= 8;
+
+    *(buffer++) = (uint8_t) first_half_data_size;
+    *(buffer++) = (uint8_t) second_half_data_size;
+
+    // uint16_t channel_id
+    uint16_t first_half_channel_id = res->channel_id;
+    uint16_t second_half_channel_id  = first_half_channel_id & 255;
+    first_half_channel_id >>= 8;
+
+    *(buffer++) = (uint8_t) first_half_channel_id;
+    *(buffer++) = (uint8_t) second_half_channel_id;
+
+    // uint16_t user_id
+    uint16_t first_half_user_id = res->user_id;
+    uint16_t second_half_user_id  = first_half_user_id & 255;
+    first_half_user_id >>= 8;
+
+    *(buffer++) = (uint8_t) first_half_user_id;
+    *(buffer++) = (uint8_t) second_half_user_id;
+
+    // uint16_t msg_len
+    uint16_t first_half_msg_len = res->msg_len;
+    uint16_t second_half_msg_len  = first_half_msg_len & 255;
+    first_half_msg_len >>= 8;
+
+    *(buffer++) = (uint8_t) first_half_msg_len;
+    *(buffer++) = (uint8_t) second_half_msg_len;
+
+    for (int i = 0; i < res->data_size; ++i)
+    {
+        *(buffer++) = (uint8_t) *msg++;
+        count++;
+    }
+
+    return count;
+}
+
+
+
+CptResponse * cpt_parse_response(uint8_t * res_buf, size_t res_size) {
+
+    if (res_buf == NULL) {
+        return NULL;
+    }
+
+    CptResponse *cpt_res = malloc(res_size);
+
+    if (cpt_res == NULL) {
+        printf("malloc error: cpt_parse_response()\n");
+        return NULL;
+    }
+
+    else {
+        cpt_res->code = *(res_buf++);
+
+        //data_size
+        uint16_t first_half_data_size = *(res_buf++);
+        uint16_t second_half_data_size = *(res_buf++);
+        cpt_res->data_size = first_half_data_size + second_half_data_size;
+
+
+        //msg
+        for (int i = 0; i < cpt_res->data_size; ++i)
+        {
+            cpt_res->data[i] = *(res_buf++);
+        }
+    }
+
+    return cpt_res;
+}
+
+
+// server_info will be global variable in server.c (?)
+int cpt_login_response(void * server_info, char * name) {
+    ServerInfo *SI;
+    SI = (ServerInfo*) server_info;
+
+    if (SI != NULL) {
+        int user_count = get_user_linked_list_length(SI->channel_linked_list->headerNode.user_linked_list);
+        SI->channel_linked_list->headerNode.channel_id = 0;
+        UserNode user_node;
+        user_node.user_id = (uint8_t*) strdup(name);
+//        user_node.user_fd =
+
+        if (user_count == 0) {
+            add_user_element(SI->channel_linked_list->headerNode.user_linked_list, 0, user_node);
+            cpt_response_init(1);
+            return 1;
+        }
+        else {
+            add_user_element(SI->channel_linked_list->headerNode.user_linked_list, user_count + 1, user_node);
+            return 1;
+        }
+    }
+
+    // response if error
+    return 0;
+}
 
 
 /**
- * Handle a received 'LOGIN' protocol message.
+ * Handle a received 'LOGOUT' protocol message.
  *
- * Use information in the CptRequest to handle
- * a LOGIN protocol message from a connected client.
- * If successful, the protocol request will be fulfilled,
- * updating any necessary information contained within
- * <server_info>.
+ * Uses information in a received CptRequest to handle
+ * a LOGOUT protocol message from a connected client.
+ *
+ * If successful, will remove any instance of the user
+ * specified by the user <id> from the GlobalChannel
+ * and any other relevant data structures.
  *
  * @param server_info   Server data structures and information.
- * @param name          Name of user in received Packet MSG field.
- * @return              1 if successful, error code on failure.
+ * @return Status Code (SUCCESS if successful, other if failure).
  */
-int cpt_login_response(void * server_info, char * name) {
+int cpt_logout_response(void * server_info) {
+    ServerInfo *SI;
+    SI = (ServerInfo*) server_info;
 
+    if (SI != NULL) {
+    }
 }
-
 
 /**
  * Handle a received 'SEND' protocol message.
@@ -391,10 +380,19 @@ int cpt_login_response(void * server_info, char * name) {
 // * @param name          Name of user in received Packet MSG field.
  * @return Status Code (0 if successful, other if failure).
  */
-int cpt_send_response(void * server_info) {
+//int cpt_send_response(void * server_info) {
+//
+//}
 
+
+
+
+ServerInfo* server_info_init() {
+    ServerInfo *server_info = malloc(sizeof(ServerInfo));
+
+    if (server_info == NULL) {
+        printf("malloc error: server_info_init()\n");
+    }
+
+    return server_info;
 }
-
-
-
-
