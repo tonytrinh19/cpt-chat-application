@@ -211,6 +211,7 @@ int main(int argc, char *argv[]) {
                         for (int conn = 1; conn < current_size; ++conn) {
                             if (conn != i) {
                                 rc = send(fds[conn].fd, res->data, res->data_size, 0);
+
                                 if (rc < 0) {
                                     perror("  send() failed");
                                     close_conn = TRUE;

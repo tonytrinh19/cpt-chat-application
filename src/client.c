@@ -36,7 +36,7 @@ static void *listeningThread(void *args) {
             break;
         }
         buffer[rc] = '\0';
-        printf("RECEIVED: %s\n", buffer);
+        printf("%s\n", buffer);
     }
 
     return NULL;
