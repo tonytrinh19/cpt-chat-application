@@ -4,19 +4,6 @@
 #ifndef TEMPLATE2_CPT_RESPONSE_H
 #define TEMPLATE2_CPT_RESPONSE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/ioctl.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdbool.h>
-#include <dc_util/bits.h>
-#include "linked_list.h"
 #include "cpt_request_builder.h"
 
 typedef struct cpt_response {

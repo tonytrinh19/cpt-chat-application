@@ -4,8 +4,27 @@
 
 #ifndef TEMPLATE2_CPT_CLIENT_H
 #define TEMPLATE2_CPT_CLIENT_H
-#include <netinet/in.h>
 
-//size_t cpt_login(void * client_info, uint8_t * serial_buf, char * name);
+#include <dc_application/options.h>
+#include "cpt_request_builder.h"
+
+struct application_settings
+{
+    struct dc_opt_settings opts;
+    struct dc_setting_string *hostname;
+    struct dc_setting_uint16 *port;
+};
+
+void *listeningThread(void *args);
+
+size_t get_size_for_serialized_request_buffer(const CptRequest *request);
+
+static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err);
+
+static int
+destroy_settings(const struct dc_posix_env *env, struct dc_error *err, struct dc_application_settings **psettings);
+
+static int run(const struct dc_posix_env *env, struct dc_error *err, struct dc_application_settings *settings);
+
 
 #endif //TEMPLATE2_CPT_CLIENT_H

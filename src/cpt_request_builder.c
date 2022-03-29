@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include "cpt_request_builder.h"
 
 #define VERSION_MAX 15
