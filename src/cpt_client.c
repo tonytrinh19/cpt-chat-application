@@ -2,6 +2,7 @@
 // Created by toni on 2022-03-25.
 //
 #include "cpt_client.h"
+#include "cpt_response.h"
 
 size_t get_size_for_serialized_request_buffer(const CptRequest *request) {
     size_t num = 6;
@@ -11,9 +12,11 @@ size_t get_size_for_serialized_request_buffer(const CptRequest *request) {
 
 void *listeningThread(void *args) {
     int *sd = (int *) args;
+    uint16_t channel_id;
+    uint16_t user_id;
     while (TRUE) {
-        char buffer[MSG_MAX_LEN];
-        int rc;
+        size_t rc;
+        uint8_t buffer[MSG_MAX_LEN];
         rc = recv(*sd, buffer,
                   sizeof(buffer), 0);
         if (rc < 0) {
@@ -24,8 +27,34 @@ void *listeningThread(void *args) {
             break;
         }
         buffer[rc] = '\0';
-        printf("%s\n", buffer);
-    }
 
+        CptResponse *res = cpt_parse_response(buffer, rc);
+        if (res == NULL) {
+            printf("Something went wrong with the server\n");
+            break;
+        }
+
+        if (res->code == MESSAGE) {
+            uint16_t first_half_channel_id = *(res->data++);
+            first_half_channel_id <<= 8;
+            uint16_t second_half_channel_id = *(res->data++);
+            channel_id = first_half_channel_id | second_half_channel_id;
+
+            uint16_t first_half_user_id = *(res->data++);
+            first_half_user_id <<= 8;
+            uint16_t second_half_user_id = *(res->data++);
+            user_id = first_half_user_id | second_half_user_id;
+
+            // Skips the msg_len for now
+            res->data++;
+            res->data++;
+            printf("%d: %s\n", user_id, (char *) res->data);
+        } else if (res->code == SUCCESS) {
+            // DO nothing
+            printf("\n");
+        } else {
+            printf("%s\n", (char *) res->data);
+        }
+    }
     return NULL;
 }

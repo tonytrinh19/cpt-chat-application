@@ -16,9 +16,9 @@
 #include <inttypes.h>
 
 #include "cpt_client.h"
+#include "linked_list.h"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
     dc_error_reporter reporter;
     struct dc_posix_env env;
@@ -27,11 +27,12 @@ int main(int argc, char *argv[])
     int ret_val;
 
     tracer = NULL;
-    dc_posix_env_init(&env,  tracer);
+    dc_posix_env_init(&env, tracer);
     reporter = dc_error_default_error_reporter;
     dc_error_init(&err, reporter);
     info = dc_application_info_create(&env, &err, "CPT Chat Application");
-    ret_val = dc_application_run(&env, &err, info, create_settings, destroy_settings, run, dc_default_create_lifecycle, dc_default_destroy_lifecycle,
+    ret_val = dc_application_run(&env, &err, info, create_settings, destroy_settings, run, dc_default_create_lifecycle,
+                                 dc_default_destroy_lifecycle,
                                  "~/.dcecho.conf",
                                  argc, argv);
     dc_application_info_destroy(&env, &info);
@@ -40,16 +41,15 @@ int main(int argc, char *argv[])
     return ret_val;
 }
 
-static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err)
-{
+static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err) {
     static const char *default_hostname = "localhost";
     static const uint16_t default_port = DEFAULT_CPT_PORT;
     struct application_settings *settings;
 
+
     settings = dc_malloc(env, err, sizeof(struct application_settings));
 
-    if(settings == NULL)
-    {
+    if (settings == NULL) {
         return NULL;
     }
 
@@ -61,43 +61,41 @@ static struct dc_application_settings *create_settings(const struct dc_posix_env
 #pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
     struct options opts[] =
             {
-                    {(struct dc_setting *)settings->opts.parent.config_path, dc_options_set_path,   "config",  required_argument, 'c', "CONFIG",  dc_string_from_string, NULL,      dc_string_from_config, NULL},
-                    {(struct dc_setting *)settings->hostname,                dc_options_set_string, "host",    required_argument, 'h', "HOST",    dc_string_from_string, "host",    dc_string_from_config, default_hostname},
-                    {(struct dc_setting *)settings->port,                    dc_options_set_uint16, "port",    required_argument, 'p', "PORT",    dc_uint16_from_string, "port",    dc_uint16_from_config, &default_port},
+                    {(struct dc_setting *) settings->opts.parent.config_path, dc_options_set_path,   "config", required_argument, 'c', "CONFIG", dc_string_from_string, NULL,   dc_string_from_config, NULL},
+                    {(struct dc_setting *) settings->hostname,                dc_options_set_string, "host",   required_argument, 'h', "HOST",   dc_string_from_string, "host", dc_string_from_config, default_hostname},
+                    {(struct dc_setting *) settings->port,                    dc_options_set_uint16, "port",   required_argument, 'p', "PORT",   dc_uint16_from_string, "port", dc_uint16_from_config, &default_port},
             };
 #pragma GCC diagnostic pop
 
     // note the trick here - we use calloc and add 1 to ensure the last line is all 0/NULL
     settings->opts.opts = dc_calloc(env, err, (sizeof(opts) / sizeof(struct options)) + 1, sizeof(struct options));
     dc_memcpy(env, settings->opts.opts, opts, sizeof(opts));
-    settings->opts.flags = "c:h:p:";
+    settings->opts.flags = "c:h:p";
     settings->opts.env_prefix = "CPT_CHAT_";
 
-    return (struct dc_application_settings *)settings;
+    return (struct dc_application_settings *) settings;
 }
 
 static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
-                            struct dc_application_settings **psettings)
-{
+                            struct dc_application_settings **psettings) {
     struct application_settings *app_settings;
 
-    app_settings = (struct application_settings *)*psettings;
+    app_settings = (struct application_settings *) *psettings;
     dc_setting_string_destroy(env, &app_settings->hostname);
     dc_setting_uint16_destroy(env, &app_settings->port);
     dc_free(env, app_settings->opts.opts, app_settings->opts.opts_size);
     dc_free(env, app_settings, sizeof(struct application_settings));
 
-    if(env->null_free)
-    {
+    if (env->null_free) {
         *psettings = NULL;
     }
 
     return 0;
 }
 
+
 static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
-               struct dc_application_settings *settings)
-{
+               struct dc_application_settings *settings) {
     struct application_settings *app_settings;
     const char *hostname;
     in_port_t port;
@@ -110,14 +108,13 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     pthread_t thread_id;
     CptRequest *request = cpt_request_init();
 
-    app_settings = (struct application_settings *)settings;
+    app_settings = (struct application_settings *) settings;
 
     hostname = dc_setting_string_get(env, app_settings->hostname);
     port = dc_setting_uint16_get(env, app_settings->port);
     ret_val = 0;
 
     // My program
-
     do {
         sd = socket(AF_INET6, SOCK_STREAM, 0);
         if (sd < 0) {
@@ -166,9 +163,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             char message[MSG_MAX_LEN];
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
-            message[message_len] = '\0';
-            cpt_request_msg(request, message);
 
+            message[message_len] = '\0';
+
+
+            cpt_request_msg(request, message);
 
             size_t size_buf = get_size_for_serialized_request_buffer(request);
             uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
@@ -191,3 +190,4 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     if (sd != -1) close(sd);
     return ret_val;
 }
+

@@ -4,7 +4,9 @@
 #ifndef TEMPLATE2_CPT_RESPONSE_H
 #define TEMPLATE2_CPT_RESPONSE_H
 
+#include <stdbool.h>
 #include "cpt_request_builder.h"
+#define GLOBAL_CHANNEL 0
 
 typedef struct cpt_response {
     uint8_t code;
@@ -81,7 +83,7 @@ void cpt_response_reset(CptResponse *response);
 * @param buffer A pointer that will store serialized string
 * @return       Size of the serialized packet.
 */
-size_t cpt_serialize_response(CptResponse *res, uint8_t *buffer);
+void cpt_serialize_response(CptResponse *res, uint8_t *buffer, bool hasSubPacket, uint16_t channel_id, uint16_t user_id, uint16_t msg_len, uint8_t *msg);
 
 /**
 * Create a cpt struct from a cpt packet.
@@ -184,5 +186,7 @@ int cpt_create_channel_response(void *server_info, char *id_list);
  * @return Status Code (0 if successful, other if failure).
  */
 int cpt_send_response(void *server_info);
+
+size_t get_size_for_serialized_response_buffer(CptResponse *res);
 
 #endif //TEMPLATE2_CPT_RESPONSE_H
