@@ -14,6 +14,8 @@ set(HEADER_LIST
         "${template2_SOURCE_DIR}/include/cpt_client.h"
         "${template2_SOURCE_DIR}/include/users.h"
         "${template2_SOURCE_DIR}/include/linked_list.h"
+        "${template2_SOURCE_DIR}/include/cpt_server.h"
+        "${template2_SOURCE_DIR}/include/cpt_response.h"
         )
 
 set(COMMON_SOURCE_LIST
@@ -22,6 +24,7 @@ set(COMMON_SOURCE_LIST
         "${template2_SOURCE_DIR}/src/cpt_client.c"
         "${template2_SOURCE_DIR}/src/users.c"
         "${template2_SOURCE_DIR}/src/linked_list.c"
+        "${template2_SOURCE_DIR}/src/cpt_response.c"
         )
 
 set(SERVER_SOURCE_LIST

@@ -3,30 +3,109 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
-#include "cpt_response.h"
-#include "cpt_request_builder.h"
 #include <math.h>
+#include <dc_application/command_line.h>
+#include <dc_application/options.h>
+#include <dc_posix/dc_stdlib.h>
+#include <dc_posix/dc_string.h>
+#include <getopt.h>
+#include <inttypes.h>
 
-#define SERVER_PORT  8000
-
-#define TRUE             1
-#define FALSE            0
+#include "cpt_response.h"
+#include "cpt_server.h"
 
 int main(int argc, char *argv[]) {
+    dc_posix_tracer tracer;
+    dc_error_reporter reporter;
+    struct dc_posix_env env;
+    struct dc_error err;
+    struct dc_application_info *info;
+    int ret_val;
+
+    tracer = NULL;
+    dc_posix_env_init(&env, tracer);
+    reporter = dc_error_default_error_reporter;
+    dc_error_init(&err, reporter);
+    info = dc_application_info_create(&env, &err, "CPT Chat Application");
+    ret_val = dc_application_run(&env, &err, info, create_settings, destroy_settings, run, dc_default_create_lifecycle,
+                                 dc_default_destroy_lifecycle,
+                                 "~/.dcecho.conf",
+                                 argc, argv);
+    dc_application_info_destroy(&env, &info);
+    dc_error_reset(&err);
+
+    return ret_val;
+}
+
+static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err) {
+    static const uint16_t default_port = DEFAULT_CPT_PORT;
+    struct application_settings *settings;
+
+    settings = dc_malloc(env, err, sizeof(struct application_settings));
+
+    if (settings == NULL) {
+        return NULL;
+    }
+
+    settings->opts.parent.config_path = dc_setting_path_create(env, err);
+    settings->port = dc_setting_uint16_create(env, err);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+    struct options opts[] =
+            {
+                    {(struct dc_setting *) settings->opts.parent.config_path, dc_options_set_path,   "config", required_argument, 'c', "CONFIG", dc_string_from_string, NULL,   dc_string_from_config, NULL},
+                    {(struct dc_setting *) settings->port,                    dc_options_set_uint16, "port",   required_argument, 'p', "PORT",   dc_uint16_from_string, "port", dc_uint16_from_config, &default_port},
+            };
+#pragma GCC diagnostic pop
+
+    // note the trick here - we use calloc and add 1 to ensure the last line is all 0/NULL
+    settings->opts.opts = dc_calloc(env, err, (sizeof(opts) / sizeof(struct options)) + 1, sizeof(struct options));
+    dc_memcpy(env, settings->opts.opts, opts, sizeof(opts));
+    settings->opts.flags = "c:p:";
+    settings->opts.env_prefix = "CPT_CHAT_";
+
+    return (struct dc_application_settings *) settings;
+}
+
+static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
+                            struct dc_application_settings **psettings) {
+    struct application_settings *app_settings;
+
+    app_settings = (struct application_settings *) *psettings;
+    dc_setting_uint16_destroy(env, &app_settings->port);
+    dc_free(env, app_settings->opts.opts, app_settings->opts.opts_size);
+    dc_free(env, app_settings, sizeof(struct application_settings));
+
+    if (env->null_free) {
+        *psettings = NULL;
+    }
+
+    return 0;
+}
+
+static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
+               struct dc_application_settings *settings) {
+    struct application_settings *app_settings;
+    in_port_t port;
+    int ret_val;
     int len, rc, on = 1;
     int listen_sd = -1, new_sd = -1;
-    int desc_ready, end_server = FALSE, compress_array = FALSE;
+    int end_server = FALSE, compress_array = FALSE;
     int close_conn;
     char buffer[MSG_MAX_LEN];
     struct sockaddr_in6 addr;
     int timeout;
     struct pollfd fds[SOMAXCONN];
     int nfds = 1, current_size = 0, i, j;
+    uint8_t *res_packet;
+    size_t size_buf;
+    app_settings = (struct application_settings *) settings;
+    port = dc_setting_uint16_get(env, app_settings->port);
+    ret_val = 0;
 
     /* Create an AF_INET6 stream socket to receive incoming      */
     /* connections on                                            */
@@ -55,7 +134,7 @@ int main(int argc, char *argv[]) {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     memcpy(&addr.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-    addr.sin6_port = htons(SERVER_PORT);
+    addr.sin6_port = htons(port);
     rc = bind(listen_sd,
               (struct sockaddr *) &addr, sizeof(addr));
     if (rc < 0) {
@@ -177,68 +256,101 @@ int main(int argc, char *argv[]) {
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
                     CptResponse *res = cpt_response_init();
 
-                    // func_set_error_res(res);
                     if (req->version != 3) // current version
                     {
                         cpt_response_code(res, req, BAD_VERSION);
-                        rc = send(fds[i].fd, res->data, res->data_size, 0);
+                        size_buf = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+                        rc = send(fds[i].fd, res_packet, size_buf, 0);
                         if (rc < 0) {
                             perror("  send() failed");
                             close_conn = TRUE;
-                            break;
                         }
-
+                        cpt_response_destroy(res);
+                        break;
                     }
 
                     if (req->channel_id != 0) // only checks for global channel at the moment
                     {
                         cpt_response_code(res, req, UKNOWN_CHANNEL);
-                        rc = send(fds[i].fd, res->data, res->data_size, 0);
+                        size_buf = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+                        rc = send(fds[i].fd, res_packet, size_buf, 0);
                         if (rc < 0) {
                             perror("  send() failed");
                             close_conn = TRUE;
-                            break;
                         }
-
+                        cpt_response_destroy(res);
+                        break;
                     }
 
                     printf("MESSAGE: %s\n", req->msg);
 
+                    /** <Hyung edit start> */
+//                    if (req->cmd_code == LOGOUT) {
+////                        cpt_response_code(res, req, USER_DISCONNECTED);
+//                        close(fds[i].fd);
+//                    }
+//                    if (req->cmd_code == LOGIN) {
+//                        cpt_response_code(res, req, USER_CONNECTED);
+//                        size_buf = get_size_for_serialized_response_buffer(res);
+//                        res_packet = calloc(size_buf, sizeof(uint8_t));cpt_serialize_response(res, res_packet, TRUE, 0, sender_id, 0, "NEW USER CONNECTED\n");
+//                        rc = send(sender_id, res_packet, size_buf, 0);
+//                        if (rc < 0) {
+//                            perror("  send() failed");
+//                            close_conn = TRUE;
+//                        }
+//                    }
+                    /** </Hyung edit end> */
+
+
                     // If it SEND then it's good
                     if (req->cmd_code != SEND) {
                         cpt_response_code(res, req, UKNOWN_CMD);
-                        rc = send(fds[i].fd, res->data, res->data_size, 0);
-
+                        size_buf = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, TRUE, 0, 0, 0, NULL);
+                        rc = send(fds[i].fd, res_packet, size_buf, 0);
                         if (rc < 0) {
                             perror("  send() failed");
                             close_conn = TRUE;
-                            break;
                         }
+                        cpt_response_destroy(res);
+                        break;
                     } else {
                         cpt_response_code(res, req, SUCCESS);
+                        size_buf = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+                        if (rc < 0) {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                            cpt_response_destroy(res);
+                            break;
+                        }
+                        free(res_packet);
                         for (int conn = 1; conn < current_size; ++conn) {
+                            // response_code will be MESSAGE
                             if (conn != i) {
                                 int user_id = fds[conn].fd;
-                                int sender_id = fds[i].fd;
-                                int nDigits = (int) (floor(log10(abs(sender_id))) + 1);
-                                // + 2 for " :" delimiter
-                                int data_len = nDigits + res->data_size + 2;
-                                char *fds_str = (char *) malloc((unsigned long) data_len);
-
-                                sprintf(fds_str, "%d :", sender_id);
-                                strcat(fds_str, (char *) res->data);
-
-                                rc = send(user_id, (uint8_t *) fds_str, data_len, 0);
-                                free(fds_str);
+                                cpt_response_code(res, req, MESSAGE);
+                                size_buf = get_size_for_serialized_response_buffer(res);
+                                res_packet = calloc(size_buf, sizeof(uint8_t));
+                                cpt_serialize_response(res, res_packet, TRUE, GLOBAL_CHANNEL, (uint16_t) fds[i].fd,
+                                                       req->msg_len, (uint8_t *) req->msg);
+                                rc = send(user_id, res_packet, size_buf, 0);
                                 if (rc < 0) {
                                     perror("  send() failed");
                                     close_conn = TRUE;
                                     break;
                                 }
+                                free(res_packet);
                             }
                         }
                     }
-
                     cpt_request_destroy(req);
                     cpt_response_destroy(res);
                 } while (FALSE);
@@ -271,10 +383,5 @@ int main(int argc, char *argv[]) {
         if (fds[i].fd >= 0)
             close(fds[i].fd);
     }
-    return EXIT_SUCCESS;
+    return ret_val;
 }
-
-
-
-
-

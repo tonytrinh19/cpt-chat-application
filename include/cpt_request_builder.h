@@ -7,11 +7,17 @@
 
 #include <netinet/in.h>
 
-#define SERVER_PORT     8000
+#define DEFAULT_CPT_PORT 1111
 #define BUFFER_LENGTH    400
 #define FALSE              0
 #define TRUE               1
 #define MSG_MAX_LEN     65536
+
+#define SERVER_NAME     "192.168.1.110"
+// 10.0.0.169
+// school: 10.65.0.209, 10.65.15.72, 192.168.1.110
+
+
 enum CMD {
     SEND = 1,
     LOGOUT,

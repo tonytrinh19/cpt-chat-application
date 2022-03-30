@@ -10,8 +10,8 @@ IF (LINT)
 ENDIF ()
 
 # Make an executable
-add_executable(server ${COMMON_SOURCE_LIST}  ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST} linked_list.c cpt_response.c)
-add_executable(client ${COMMON_SOURCE_LIST}  ${CLIENT_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST} cpt_response.c cpt_request_builder.c)
+add_executable(server ${COMMON_SOURCE_LIST}  ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST})
+add_executable(client ${COMMON_SOURCE_LIST}  ${CLIENT_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST})
 
 # We need this directory, and users of our library will need it too
 target_include_directories(server PRIVATE ../include)
@@ -50,7 +50,6 @@ target_link_libraries(server PRIVATE ${LIBDC_POSIX})
 target_link_libraries(server PRIVATE ${LIBDC_UTIL})
 target_link_libraries(server PRIVATE ${LIBDC_FSM})
 target_link_libraries(server PRIVATE ${LIBDC_APPLICATION})
-target_link_libraries(server PRIVATE pthread)
 target_link_libraries(client PRIVATE pthread)
 target_link_libraries(client PRIVATE ${LIBM})
 target_link_libraries(client PRIVATE ${LIBDC_ERROR})

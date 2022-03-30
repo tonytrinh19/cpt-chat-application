@@ -2,56 +2,119 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "cpt_request_builder.h"
+#include <dc_application/command_line.h>
+#include <dc_application/config.h>
+#include <dc_application/options.h>
+#include <dc_posix/dc_stdlib.h>
+#include <dc_posix/dc_string.h>
+#include <getopt.h>
+#include <inttypes.h>
 
-
-#define SERVER_NAME     "10.65.14.202"
-// 10.0.0.169
-// school: 10.65.0.209, 10.65.15.72
-
-static size_t get_size_for_serialized_request_buffer(const CptRequest *request) {
-    size_t num = 6;
-    num += request->msg_len;
-    return num;
-}
-
-static void *listeningThread(void *args) {
-    int *sd = (int *) args;
-    while (TRUE) {
-        char buffer[MSG_MAX_LEN];
-        int rc;
-        rc = recv(*sd, buffer,
-                  sizeof(buffer), 0);
-        if (rc < 0) {
-            perror("recv() failed");
-            break;
-        } else if (rc == 0) {
-            printf("The server closed the connection\n");
-            break;
-        }
-        buffer[rc] = '\0';
-        printf("%s\n", buffer);
-    }
-
-    return NULL;
-}
+#include "cpt_client.h"
+#include "linked_list.h"
 
 int main(int argc, char *argv[]) {
-    int sd = -1, rc, bytesReceived;
+    dc_posix_tracer tracer;
+    dc_error_reporter reporter;
+    struct dc_posix_env env;
+    struct dc_error err;
+    struct dc_application_info *info;
+    int ret_val;
+
+    tracer = NULL;
+    dc_posix_env_init(&env, tracer);
+    reporter = dc_error_default_error_reporter;
+    dc_error_init(&err, reporter);
+    info = dc_application_info_create(&env, &err, "CPT Chat Application");
+    ret_val = dc_application_run(&env, &err, info, create_settings, destroy_settings, run, dc_default_create_lifecycle,
+                                 dc_default_destroy_lifecycle,
+                                 "~/.dcecho.conf",
+                                 argc, argv);
+    dc_application_info_destroy(&env, &info);
+    dc_error_reset(&err);
+
+    return ret_val;
+}
+
+static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err) {
+    static const char *default_hostname = "localhost";
+    static const uint16_t default_port = DEFAULT_CPT_PORT;
+    struct application_settings *settings;
+
+
+    settings = dc_malloc(env, err, sizeof(struct application_settings));
+
+    if (settings == NULL) {
+        return NULL;
+    }
+
+    settings->opts.parent.config_path = dc_setting_path_create(env, err);
+    settings->hostname = dc_setting_string_create(env, err);
+    settings->port = dc_setting_uint16_create(env, err);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+    struct options opts[] =
+            {
+                    {(struct dc_setting *) settings->opts.parent.config_path, dc_options_set_path,   "config", required_argument, 'c', "CONFIG", dc_string_from_string, NULL,   dc_string_from_config, NULL},
+                    {(struct dc_setting *) settings->hostname,                dc_options_set_string, "host",   required_argument, 'h', "HOST",   dc_string_from_string, "host", dc_string_from_config, default_hostname},
+                    {(struct dc_setting *) settings->port,                    dc_options_set_uint16, "port",   required_argument, 'p', "PORT",   dc_uint16_from_string, "port", dc_uint16_from_config, &default_port},
+            };
+#pragma GCC diagnostic pop
+
+    // note the trick here - we use calloc and add 1 to ensure the last line is all 0/NULL
+    settings->opts.opts = dc_calloc(env, err, (sizeof(opts) / sizeof(struct options)) + 1, sizeof(struct options));
+    dc_memcpy(env, settings->opts.opts, opts, sizeof(opts));
+    settings->opts.flags = "c:h:p";
+    settings->opts.env_prefix = "CPT_CHAT_";
+
+    return (struct dc_application_settings *) settings;
+}
+
+static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
+                            struct dc_application_settings **psettings) {
+    struct application_settings *app_settings;
+
+    app_settings = (struct application_settings *) *psettings;
+    dc_setting_string_destroy(env, &app_settings->hostname);
+    dc_setting_uint16_destroy(env, &app_settings->port);
+    dc_free(env, app_settings->opts.opts, app_settings->opts.opts_size);
+    dc_free(env, app_settings, sizeof(struct application_settings));
+
+    if (env->null_free) {
+        *psettings = NULL;
+    }
+
+    return 0;
+}
+
+
+static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
+               struct dc_application_settings *settings) {
+    struct application_settings *app_settings;
+    const char *hostname;
+    in_port_t port;
+    int ret_val;
+    int sd = -1, rc;
     char buffer[BUFFER_LENGTH];
     char server[BUFSIZ];
     struct sockaddr_in6 serveraddr;
     struct addrinfo hints, *res;
     pthread_t thread_id;
     CptRequest *request = cpt_request_init();
-    int once = 0;
 
+    app_settings = (struct application_settings *) settings;
+
+    hostname = dc_setting_string_get(env, app_settings->hostname);
+    port = dc_setting_uint16_get(env, app_settings->port);
+    ret_val = 0;
+
+    // My program
     do {
         sd = socket(AF_INET6, SOCK_STREAM, 0);
         if (sd < 0) {
@@ -59,23 +122,18 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        if (argc > 1)
-            strcpy(server, argv[1]);
-        else
-            strcpy(server, SERVER_NAME);
-
         memset(&serveraddr, 0, sizeof(serveraddr));
         serveraddr.sin6_family = AF_INET6;
-        serveraddr.sin6_port = htons(SERVER_PORT);
-        rc = inet_pton(AF_INET6, server, &serveraddr.sin6_addr.s6_addr);
+        serveraddr.sin6_port = htons(port);
+        rc = inet_pton(AF_INET6, hostname, &serveraddr.sin6_addr.s6_addr);
 
         if (rc != 1) {
             memset(&hints, 0, sizeof(hints));
             hints.ai_family = AF_INET6;
             hints.ai_flags = AI_V4MAPPED;
-            rc = getaddrinfo(server, NULL, &hints, &res);
+            rc = getaddrinfo(hostname, NULL, &hints, &res);
             if (rc != 0) {
-                printf("Host not found! (%s)\n", server);
+                printf("Host not found! (%s)\n", hostname);
                 perror("getaddrinfo() failed\n");
                 break;
             }
@@ -105,13 +163,15 @@ int main(int argc, char *argv[]) {
             char message[MSG_MAX_LEN];
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
-            message[message_len] = '\0';
-            cpt_request_msg(request, message);
 
+            message[message_len] = '\0';
+
+
+            cpt_request_msg(request, message);
 
             size_t size_buf = get_size_for_serialized_request_buffer(request);
             uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
-            size_t size = cpt_serialize_request(request, buff);
+            cpt_serialize_request(request, buff);
 
             rc = send(sd, buff, size_buf, 0);
             if (rc < 0) {
@@ -128,5 +188,6 @@ int main(int argc, char *argv[]) {
     cpt_request_destroy(request);
     /* Close down any open socket descriptors                              */
     if (sd != -1) close(sd);
-    return EXIT_SUCCESS;
+    return ret_val;
 }
+

@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include "cpt_request_builder.h"
 
 #define VERSION_MAX 15
@@ -106,7 +105,6 @@ size_t cpt_serialize_request(const CptRequest *req, uint8_t *buffer) {
         *(buffer++) = *msg++;
         count++;
     }
-
     return count;
 }
 
@@ -119,17 +117,14 @@ CptRequest *cpt_parse_request(uint8_t *req_buf, int size) {
     uint16_t first_half_channel_id = *(req_buf++);
     first_half_channel_id <<= 8;
     uint16_t second_half_channel_id = *(req_buf++);
-    uint16_t stuff = first_half_channel_id | second_half_channel_id;
-    req->channel_id = stuff;
+    req->channel_id = first_half_channel_id | second_half_channel_id;
 
     uint16_t first_half_msg_len = *(req_buf++);
     first_half_channel_id <<= 8;
     uint16_t second_half_msg_len = *(req_buf++);
-    uint16_t stuff2 = first_half_msg_len | second_half_msg_len;
-    req->msg_len = stuff2;
+    req->msg_len = first_half_msg_len | second_half_msg_len;
 
     req->msg = calloc(req->msg_len, sizeof(char));
-
 
     for (int i = 0; i < req->msg_len; ++i) {
         req->msg[i] = (char) *(req_buf++);

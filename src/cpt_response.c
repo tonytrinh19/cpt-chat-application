@@ -1,7 +1,6 @@
 #include "cpt_response.h"
 #include "linked_list.h"
 
-
 CptResponse *cpt_response_init() {
     CptResponse *response = calloc(1, sizeof(CptResponse));
 
@@ -18,16 +17,20 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_c
     switch (res_code) {
         case SUCCESS:    // 1
         {
-            char *data = strdup((char *) request->msg);
+            char *data = strdup(
+                    "Operation was successful\n");
             response->data = (uint8_t *) data;
-            response->data_size = request->msg_len;
+            response->data_size = (uint16_t) strlen(data);
             break;
         }
         case MESSAGE:    // 2
-            response->data = (uint8_t *) strdup(
-                    "The channel id is in the CHAN_ID, msg contents are a message sub-packet\n");
-            response->data_size = (uint16_t) strlen((const char *) response->data);
+        {
+            char *data = strdup((char *) request->msg);
+            response->data = (uint8_t *) data;
+            // Add 6 for sub-packet fields.
+            response->data_size = request->msg_len + 6;
             break;
+        }
         case USER_CONNECTED:    // 3
             response->data = (uint8_t *) strdup("User connected\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
@@ -77,9 +80,13 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_c
             response->data_size = (uint16_t) strlen((const char *) response->data);
             break;
         case BAD_VERSION:    // 15
-            response->data = (uint8_t *) strdup("Bad CPT Version number error\n");
-            response->data_size = (uint16_t) strlen((const char *) response->data);
-            break;
+            {
+                char *data = strdup(
+                        "Bad CPT Version number error\n");
+                response->data = (uint8_t *) data;
+                response->data_size = (uint16_t) strlen(data);
+                break;
+            }
         case SEND_FAILED:   // 16
             response->data = (uint8_t *) strdup("Message failed to send\n");
             response->data_size = (uint16_t) strlen((const char *) response->data);
@@ -119,11 +126,13 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_c
 }
 
 void cpt_response_destroy(CptResponse *response) {
-    cpt_response_reset(response);
-    if (response) free(response);
+    response->code = 0;
+    response->data_size = 0;
+    response->data = NULL;
+
+    free(response);
     response = NULL;
 }
-
 
 void cpt_response_reset(CptResponse *response) {
     response->code = 0;
@@ -132,13 +141,8 @@ void cpt_response_reset(CptResponse *response) {
     response->data_size = 0;
 }
 
-size_t cpt_serialize_response(CptResponse *res, uint8_t *buffer) {
-    // code 1, data_size 2
-    size_t count = 3;
-    uint8_t *msg = res->data;
-    // Saves the beginning of the buffer.
-    uint8_t *temp = buffer;
-
+void cpt_serialize_response(CptResponse *res, uint8_t *buffer, bool hasSubPacket, uint16_t channel_id, uint16_t user_id,
+                            uint16_t msg_len, uint8_t *msg) {
     *(buffer++) = res->code;
 
     uint16_t first_half_data_size = res->data_size;
@@ -148,12 +152,36 @@ size_t cpt_serialize_response(CptResponse *res, uint8_t *buffer) {
     *(buffer++) = (uint8_t) first_half_data_size;
     *(buffer++) = (uint8_t) second_half_data_size;
 
-    for (int i = 0; i < res->data_size; ++i) {
-        *(buffer++) = *msg++;
-        count++;
-    }
+    if (hasSubPacket) {
+        uint16_t first_half_channel_id = channel_id;
+        uint16_t second_half_channel_id = first_half_channel_id & 255;
+        first_half_channel_id >>= 8;
+        *(buffer++) = (uint8_t) first_half_channel_id;
+        *(buffer++) = (uint8_t) second_half_channel_id;
 
-    return count;
+        uint16_t first_half_user_id = user_id;
+        uint16_t second_half_user_id = first_half_user_id & 255;
+        first_half_user_id >>= 8;
+        *(buffer++) = (uint8_t) first_half_user_id;
+        *(buffer++) = (uint8_t) second_half_user_id;
+
+        uint16_t first_half_msg_len = msg_len;
+        uint16_t second_half_msg_len = first_half_msg_len & 255;
+        first_half_msg_len >>= 8;
+
+        *(buffer++) = (uint8_t) first_half_msg_len;
+        *(buffer++) = (uint8_t) second_half_msg_len;
+        for (int i = 0; i < msg_len; ++i) {
+            *(buffer++) = *msg++;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < res->data_size; ++i) {
+            *(buffer++) = *res->data++;
+        }
+    }
+    *buffer = '\0';
 }
 
 CptResponse *cpt_parse_response(uint8_t *res_buf, size_t res_size) {
@@ -162,29 +190,26 @@ CptResponse *cpt_parse_response(uint8_t *res_buf, size_t res_size) {
         return NULL;
     }
 
-    CptResponse *cpt_res = malloc(res_size);
+    CptResponse *cpt_res = calloc(res_size, sizeof(uint8_t));
 
     if (cpt_res == NULL) {
         printf("malloc error: cpt_parse_response()\n");
         return NULL;
     } else {
         cpt_res->code = *(res_buf++);
-
         //data_size
         uint16_t first_half_data_size = *(res_buf++);
+        first_half_data_size <<= 8;
         uint16_t second_half_data_size = *(res_buf++);
-        cpt_res->data_size = first_half_data_size + second_half_data_size;
+        cpt_res->data_size = first_half_data_size | second_half_data_size;
+        cpt_res->data = malloc(cpt_res->data_size * sizeof(uint8_t));
 
-
-        //msg
         for (int i = 0; i < cpt_res->data_size; ++i) {
             cpt_res->data[i] = *(res_buf++);
         }
     }
-
     return cpt_res;
 }
-
 
 // server_info will be global variable in server.c (?)
 int cpt_login_response(void *server_info, char *name) {
@@ -196,7 +221,6 @@ int cpt_login_response(void *server_info, char *name) {
         SI->channel_linked_list->headerNode.channel_id = 0;
         UserNode user_node;
         user_node.user_id = (uint8_t *) strdup(name);
-//        user_node.user_fd =
 
         if (user_count == 0) {
             add_user_element(SI->channel_linked_list->headerNode.user_linked_list, 0, user_node);
@@ -219,3 +243,9 @@ int cpt_logout_response(void *server_info) {
     }
 }
 
+size_t get_size_for_serialized_response_buffer(CptResponse *res) {
+    // always have at least 3 elements. (1 for res_code, 2 for msg_lem/data_size)
+    size_t count = 3;
+    count += res->data_size;
+    return count;
+}
