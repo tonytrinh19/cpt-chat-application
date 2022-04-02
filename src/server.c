@@ -111,21 +111,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
 
     // Default Channel Linked List Create
-    ChannelLinkedList *channel_linked_list = NULL;
-    ChannelNode channel_node;
+    UserLinkedList* user_linked_list[65535];
 
-    // Default User Linked List Create
-    UserLinkedList *user_linked_list = NULL;
+    // Default(Channel 0) User Linked List Create
+    user_linked_list[0] = create_user_linked_list();
     UserNode user_node;
-
-
-    channel_linked_list = create_channel_linked_list();
-    user_linked_list = create_user_linked_list();
-
-    // Channel 0 Create
-    channel_node.channel_id = 0;
-    channel_node.user_linked_list = user_linked_list;
-    add_channel_element(channel_linked_list, 0, channel_node);
 
 
 
@@ -291,10 +281,10 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         parse_username = strtok(req->msg, " ");
                         parse_username = strtok(NULL, " ");
                         user_node.user_id = (uint8_t *)strdup(parse_username);
-                        add_user_element(user_linked_list, i - 1, user_node);
-                        display_user_linked_list(channel_node.user_linked_list);
+                        add_user_element(user_linked_list[0], i - 1, user_node);
+                        display_user_linked_list(user_linked_list[0]);
+                        fds
 
-                        cpt_response_code(res, req, SUCCESS);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, TRUE, 0, get_user_element(user_linked_list, i - 1), res->data_size, res->data);

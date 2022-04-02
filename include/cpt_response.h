@@ -6,12 +6,22 @@
 
 #include <stdbool.h>
 #include "cpt_request_builder.h"
+#include "linked_list.h"
+
 #define GLOBAL_CHANNEL 0
+
+typedef struct cpt_sub_packet {
+    uint16_t channel_id;
+    uint16_t user_fd;
+    uint16_t msg_len;
+    char* msg;
+}CptSubPacket;
+
 
 typedef struct cpt_response {
     uint8_t code;
     uint16_t data_size;
-    uint8_t *data;
+    CptSubPacket *data;
 } CptResponse;
 
 enum server_res_code {
@@ -40,7 +50,7 @@ enum server_res_code {
     SERVER_FULL
 };
 
-void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_code);
+void cpt_response_code(CptResponse *response, CptRequest *request, struct pollfd fds, uint8_t res_code);
 
 /**
  * Initialize CptResponse server-side packet.
