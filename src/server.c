@@ -254,6 +254,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
+                    printf("cmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n", req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
                     CptResponse *res = cpt_response_init();
 
                     if (req->version != 3) // current version
@@ -273,37 +274,24 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
                     if (req->channel_id != 0) // only checks for global channel at the moment
                     {
-                        cpt_response_code(res, req, UKNOWN_CHANNEL);
-                        size_buf = get_size_for_serialized_response_buffer(res);
-                        res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
-                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-                        if (rc < 0) {
-                            perror("  send() failed");
-                            close_conn = TRUE;
+                        if (req->channel_id > 65535 || req->channel_id < 0) {
+                            cpt_response_code(res, req, UKNOWN_CHANNEL);
                         }
-                        cpt_response_destroy(res);
-                        break;
+                        else {
+                            size_buf = get_size_for_serialized_response_buffer(res);
+                            res_packet = calloc(size_buf, sizeof(uint8_t));
+                            cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+                            rc = send(fds[i].fd, res_packet, size_buf, 0);
+                            if (rc < 0) {
+                                perror("  send() failed");
+                                close_conn = TRUE;
+                            }
+                            cpt_response_destroy(res);
+                            break;
+                        }
                     }
 
                     printf("MESSAGE: %s\n", req->msg);
-
-                    /** <Hyung edit start> */
-//                    if (req->cmd_code == LOGOUT) {
-////                        cpt_response_code(res, req, USER_DISCONNECTED);
-//                        close(fds[i].fd);
-//                    }
-//                    if (req->cmd_code == LOGIN) {
-//                        cpt_response_code(res, req, USER_CONNECTED);
-//                        size_buf = get_size_for_serialized_response_buffer(res);
-//                        res_packet = calloc(size_buf, sizeof(uint8_t));cpt_serialize_response(res, res_packet, TRUE, 0, sender_id, 0, "NEW USER CONNECTED\n");
-//                        rc = send(sender_id, res_packet, size_buf, 0);
-//                        if (rc < 0) {
-//                            perror("  send() failed");
-//                            close_conn = TRUE;
-//                        }
-//                    }
-                    /** </Hyung edit end> */
 
 
                     // If it SEND then it's good
