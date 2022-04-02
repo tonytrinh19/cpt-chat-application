@@ -18,6 +18,8 @@
 #include "cpt_client.h"
 #include "linked_list.h"
 
+uint8_t cmd_val(const char* cmd);
+
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
     dc_error_reporter reporter;
@@ -44,9 +46,6 @@ int main(int argc, char *argv[]) {
 static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err) {
     static const char *default_hostname = "localhost";
     static const uint16_t default_port = DEFAULT_CPT_PORT;
-    static const char* default_cmd = "SEND";
-    static const char* default_user = "USER";
-    static const uint16_t default_channel = 0;
     struct application_settings *settings;
 
 
@@ -59,9 +58,7 @@ static struct dc_application_settings *create_settings(const struct dc_posix_env
     settings->opts.parent.config_path = dc_setting_path_create(env, err);
     settings->hostname = dc_setting_string_create(env, err);
     settings->port = dc_setting_uint16_create(env, err);
-    settings->cmd = dc_setting_string_create(env, err);
-    settings->username = dc_setting_string_create(env, err);
-    settings->channel = dc_setting_uint16_create(env, err);
+
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
@@ -70,16 +67,13 @@ static struct dc_application_settings *create_settings(const struct dc_posix_env
                     {(struct dc_setting *) settings->opts.parent.config_path, dc_options_set_path,   "config", required_argument, 'c', "CONFIG", dc_string_from_string, NULL,   dc_string_from_config, NULL},
                     {(struct dc_setting *) settings->hostname,                dc_options_set_string, "host",   required_argument, 'h', "HOST",   dc_string_from_string, "host", dc_string_from_config, default_hostname},
                     {(struct dc_setting *) settings->port,                    dc_options_set_uint16, "port",   required_argument, 'p', "PORT",   dc_uint16_from_string, "port", dc_uint16_from_config, &default_port},
-                    {(struct dc_setting *) settings->cmd,                     dc_options_set_string, "cmd",    required_argument, 'm', "CMD",    dc_string_from_string, "cmd",  dc_string_from_config, default_cmd},
-                    {(struct dc_setting *) settings->username,                dc_options_set_string, "user",    required_argument,'u', "USER",   dc_string_from_string, "user",  dc_string_from_config, default_user},
-                    {(struct dc_setting *) settings->channel,                 dc_options_set_uint16, "channel",    required_argument,'n', "CHANNEL",   dc_uint16_from_string, "channel",  dc_uint16_from_config, &default_channel},
             };
 #pragma GCC diagnostic pop
 
     // note the trick here - we use calloc and add 1 to ensure the last line is all 0/NULL
     settings->opts.opts = dc_calloc(env, err, (sizeof(opts) / sizeof(struct options)) + 1, sizeof(struct options));
     dc_memcpy(env, settings->opts.opts, opts, sizeof(opts));
-    settings->opts.flags = "c:h:p:m:u:n";
+    settings->opts.flags = "c:h:p:u:n";
     settings->opts.env_prefix = "CPT_CHAT_";
 
     return (struct dc_application_settings *) settings;
@@ -92,9 +86,6 @@ static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unus
     app_settings = (struct application_settings *) *psettings;
     dc_setting_string_destroy(env, &app_settings->hostname);
     dc_setting_uint16_destroy(env, &app_settings->port);
-    dc_setting_string_destroy(env, &app_settings->cmd);
-    dc_setting_string_destroy(env, &app_settings->username);
-    dc_setting_uint16_destroy(env, &app_settings->channel);
     dc_free(env, app_settings->opts.opts, app_settings->opts.opts_size);
     dc_free(env, app_settings, sizeof(struct application_settings));
 
@@ -114,6 +105,7 @@ uint8_t cmd_val(const char* cmd) {
     else if (strcmp(cmd, "JOIN_CHANNEL") == 0) return JOIN_CHANNEL;
     else if (strcmp(cmd, "LEAVE_CHANNEL") == 0) return LEAVE_CHANNEL;
     else if (strcmp(cmd, "LOGIN") == 0) return LOGIN;
+    else return 0;
 }
 
 
@@ -122,11 +114,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     struct application_settings *app_settings;
     const char *hostname;
     in_port_t port;
-
-    const char *cmd;
-    char *username;
-    uint16_t channel;
-
     int ret_val;
     int sd = -1, rc;
     char buffer[BUFFER_LENGTH];
@@ -140,9 +127,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
     hostname = dc_setting_string_get(env, app_settings->hostname);
     port = dc_setting_uint16_get(env, app_settings->port);
-    cmd = dc_setting_string_get(env, app_settings->cmd);
-    username = dc_setting_string_get(env, app_settings->username);
-    channel = dc_setting_uint16_get(env, app_settings->channel);
 
     ret_val = 0;
 
@@ -190,18 +174,24 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
         while (TRUE) {
             // Take input from client and send it to the server
             request->version = 3; // Version 3
-            request->cmd_code = cmd_val(cmd); // SEND Message
-            request->channel_id = channel; // Global channel
+//            request->cmd_code = cmd_val(cmd); // SEND Message
+//            request->channel_id = channel; // Global channel
             char message[MSG_MAX_LEN];
 
             ssize_t message_len;
-            ssize_t username_len = (ssize_t) strlen(username);
-            message_len = read(STDIN_FILENO, message, MSG_MAX_LEN) + username_len;
-            strcat(message, username);
+            message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
             message[message_len] = '\0';
 
-            printf("version = %d\n cmd_code = %d\n channel_id = %d\n message = %s\n", 3, cmd_val(cmd), channel, message);
+            char* parse_message;
+            parse_message = strtok(message, " ");
+            uint8_t cmd_code = cmd_val(parse_message);
+            request->cmd_code = cmd_code;
 
+            // CREATE_CHANNEL     JOIN_CHANNEL    LEAVE_CHANNEL
+            if (cmd_code == 4 || cmd_code == 5 || cmd_code == 6) {
+                parse_message = strtok(NULL, " ");
+                request->channel_id = (uint16_t) atoi(parse_message);
+            }
             cpt_request_msg(request, message);
 
             size_t size_buf = get_size_for_serialized_request_buffer(request);

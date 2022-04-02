@@ -254,7 +254,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
-                    printf("cmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n", req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
+                    printf("\n\ncmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n\n\n", req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
                     CptResponse *res = cpt_response_init();
 
                     if (req->version != 3) // current version
