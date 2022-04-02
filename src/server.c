@@ -13,9 +13,11 @@
 #include <dc_posix/dc_string.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <linked_list.h>
 
 #include "cpt_response.h"
 #include "cpt_server.h"
+
 
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
@@ -106,6 +108,26 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     app_settings = (struct application_settings *) settings;
     port = dc_setting_uint16_get(env, app_settings->port);
     ret_val = 0;
+
+
+    // Default Channel Linked List Create
+    ChannelLinkedList *channel_linked_list = NULL;
+    ChannelNode channel_node;
+
+    // Default User Linked List Create
+    UserLinkedList *user_linked_list = NULL;
+    UserNode user_node;
+
+
+    channel_linked_list = create_channel_linked_list();
+    user_linked_list = create_user_linked_list();
+
+    // Channel 0 Create
+    channel_node.channel_id = 0;
+    channel_node.user_linked_list = user_linked_list;
+    add_channel_element(channel_linked_list, 0, channel_node);
+
+
 
     /* Create an AF_INET6 stream socket to receive incoming      */
     /* connections on                                            */
@@ -249,20 +271,33 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         break;
                     }
 
+
                     /* Data was received                                 */
                     len = rc;
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
-                    printf("\n\ncmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n\n\n", req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
                     CptResponse *res = cpt_response_init();
 
-                    if (req->version != 3) // current version
-                    {
-                        cpt_response_code(res, req, BAD_VERSION);
+
+                    printf("\n\nfds[i].fd = %d\ncmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n\n\n",
+                                fds[i].fd, req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
+
+
+                    user_node.user_fd = (uint8_t) fds[i].fd;
+
+                    if (req->cmd_code == LOGIN) {
+                        char* parse_username;
+                        parse_username = strtok(req->msg, " ");
+                        parse_username = strtok(NULL, " ");
+                        user_node.user_id = (uint8_t *)strdup(parse_username);
+                        add_user_element(user_linked_list, i - 1, user_node);
+                        display_user_linked_list(channel_node.user_linked_list);
+
+                        cpt_response_code(res, req, SUCCESS);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+                        cpt_serialize_response(res, res_packet, TRUE, 0, get_user_element(user_linked_list, i - 1), res->data_size, res->data);
                         rc = send(fds[i].fd, res_packet, size_buf, 0);
                         if (rc < 0) {
                             perror("  send() failed");
@@ -271,6 +306,23 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         cpt_response_destroy(res);
                         break;
                     }
+
+
+
+//                    if (req->version != 3) // current version
+//                    {
+//                        cpt_response_code(res, req, BAD_VERSION);
+//                        size_buf = get_size_for_serialized_response_buffer(res);
+//                        res_packet = calloc(size_buf, sizeof(uint8_t));
+//                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+//                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+//                        if (rc < 0) {
+//                            perror("  send() failed");
+//                            close_conn = TRUE;
+//                        }
+//                        cpt_response_destroy(res);
+//                        break;
+//                    }
 
                     if (req->channel_id != 0) // only checks for global channel at the moment
                     {
@@ -307,7 +359,9 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         }
                         cpt_response_destroy(res);
                         break;
-                    } else {
+                    }
+                    else
+                    {
                         cpt_response_code(res, req, SUCCESS);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
@@ -373,3 +427,5 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     }
     return ret_val;
 }
+
+

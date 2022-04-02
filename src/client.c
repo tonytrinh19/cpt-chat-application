@@ -181,9 +181,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
             message[message_len] = '\0';
+//            printf("this is message = %s\n", message);
+            char *message_copy = strdup(message);
 
             char* parse_message;
-            parse_message = strtok(message, " ");
+            parse_message = strtok(message_copy, " ");
             uint8_t cmd_code = cmd_val(parse_message);
             request->cmd_code = cmd_code;
 
@@ -192,11 +194,14 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                 parse_message = strtok(NULL, " ");
                 request->channel_id = (uint16_t) atoi(parse_message);
             }
+            free(message_copy);
             cpt_request_msg(request, message);
 
             size_t size_buf = get_size_for_serialized_request_buffer(request);
             uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
             cpt_serialize_request(request, buff);
+            printf("\n\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
+                   request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
 
             rc = send(sd, buff, size_buf, 0);
             if (rc < 0) {

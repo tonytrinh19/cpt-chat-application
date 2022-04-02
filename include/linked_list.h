@@ -35,6 +35,7 @@ typedef struct user_linked_list {
 }UserLinkedList;
 
 
+
 typedef struct channel_node {
     uint16_t channel_id;
     UserLinkedList *user_linked_list;
@@ -42,10 +43,12 @@ typedef struct channel_node {
 }ChannelNode;
 
 
+
 typedef struct channel_linked_list {
     int channel_count;
     ChannelNode headerNode;
 }ChannelLinkedList;
+
 
 
 typedef struct server_info {
@@ -63,7 +66,7 @@ void clear_user_linked_list(UserLinkedList *pList);
 int get_user_linked_list_length(UserLinkedList *pList);
 void delete_user_linked_list(UserLinkedList *pList);
 int is_user_linked_list_empty(UserLinkedList * pList);
-
+void display_user_linked_list(UserLinkedList* pList);
 
 ChannelLinkedList* create_channel_linked_list();
 int add_channel_element(ChannelLinkedList *pList, int position, ChannelNode element);

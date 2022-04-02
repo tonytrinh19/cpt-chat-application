@@ -153,6 +153,22 @@ int is_user_linked_list_empty(UserLinkedList * pList) {
 }
 
 
+void display_user_linked_list(UserLinkedList* pList) {
+    int i = 0;
+
+    if (pList != NULL) {
+        printf("Current number of element: %d \n", pList->user_count);
+
+        for (i = 0; i < pList->user_count; i++) {
+            printf("[%d] : %s\n", i, get_user_element(pList, i)->user_id);
+        }
+    }
+    else {
+        printf("No element.\n");
+    }
+}
+
+
 // Channel Linked List
 ChannelLinkedList* create_channel_linked_list() {
     ChannelLinkedList *pReturn = NULL;
@@ -299,3 +315,6 @@ int is_channel_linked_list_empty(ChannelLinkedList * pList) {
     }
     return ret;
 }
+
+
+
