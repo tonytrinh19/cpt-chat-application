@@ -50,7 +50,7 @@ enum server_res_code {
     SERVER_FULL
 };
 
-void cpt_response_code(CptResponse *response, CptRequest *request, struct pollfd fds, uint8_t res_code);
+void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, uint8_t res_code);
 
 /**
  * Initialize CptResponse server-side packet.
@@ -93,7 +93,7 @@ void cpt_response_reset(CptResponse *response);
 * @param buffer A pointer that will store serialized string
 * @return       Size of the serialized packet.
 */
-void cpt_serialize_response(CptResponse *res, uint8_t *buffer, bool hasSubPacket, uint16_t channel_id, uint16_t user_id, uint16_t msg_len, uint8_t *msg);
+size_t cpt_serialize_response(CptResponse *res, uint8_t *buffer, uint16_t data_size, uint16_t channel_id, uint16_t user_id, uint16_t msg_len, uint8_t *msg);
 
 /**
 * Create a cpt struct from a cpt packet.

@@ -35,20 +35,20 @@ void *listeningThread(void *args) {
         }
 
         if (res->code == MESSAGE) {
-            uint16_t first_half_channel_id = *(res->data++);
+            uint16_t first_half_channel_id = res->data->channel_id;
             first_half_channel_id <<= 8;
-            uint16_t second_half_channel_id = *(res->data++);
+            uint16_t second_half_channel_id = res->data->channel_id;
             channel_id = first_half_channel_id | second_half_channel_id;
 
-            uint16_t first_half_user_id = *(res->data++);
+            uint16_t first_half_user_id = res->data->user_fd;
             first_half_user_id <<= 8;
-            uint16_t second_half_user_id = *(res->data++);
+            uint16_t second_half_user_id = res->data->user_fd;
             user_id = first_half_user_id | second_half_user_id;
 
             // Skips the msg_len for now
-            res->data++;
-            res->data++;
-            printf("%d: %s\n", user_id, (char *) res->data);
+            res->data->msg++;
+            res->data->msg++;
+            printf("%d: %d\n", user_id, res->data->user_fd);
         } else if (res->code == SUCCESS) {
             // DO nothing
             printf("\n");

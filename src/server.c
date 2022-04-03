@@ -283,12 +283,12 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         user_node.user_id = (uint8_t *)strdup(parse_username);
                         add_user_element(user_linked_list[0], i - 1, user_node);
                         display_user_linked_list(user_linked_list[0]);
-                        fds
 
+                        cpt_response_code(res, req, (uint8_t) fds[i].fd, SUCCESS);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, TRUE, 0, get_user_element(user_linked_list, i - 1), res->data_size, res->data);
-                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
+                        rc = send(user_node.user_fd, res_packet, size_buf, 0);
                         if (rc < 0) {
                             perror("  send() failed");
                             close_conn = TRUE;
@@ -313,66 +313,65 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 //                        cpt_response_destroy(res);
 //                        break;
 //                    }
-
-                    if (req->channel_id != 0) // only checks for global channel at the moment
-                    {
-                        if (req->channel_id > 65535 || req->channel_id < 0) {
-                            cpt_response_code(res, req, UKNOWN_CHANNEL);
-                        }
-                        else {
-                            size_buf = get_size_for_serialized_response_buffer(res);
-                            res_packet = calloc(size_buf, sizeof(uint8_t));
-                            cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
-                            rc = send(fds[i].fd, res_packet, size_buf, 0);
-                            if (rc < 0) {
-                                perror("  send() failed");
-                                close_conn = TRUE;
-                            }
-                            cpt_response_destroy(res);
-                            break;
-                        }
-                    }
-
-                    printf("MESSAGE: %s\n", req->msg);
-
-
-                    // If it SEND then it's good
-                    if (req->cmd_code != SEND) {
-                        cpt_response_code(res, req, UKNOWN_CMD);
-                        size_buf = get_size_for_serialized_response_buffer(res);
-                        res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, TRUE, 0, 0, 0, NULL);
-                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-                        if (rc < 0) {
-                            perror("  send() failed");
-                            close_conn = TRUE;
-                        }
-                        cpt_response_destroy(res);
-                        break;
-                    }
-                    else
-                    {
-                        cpt_response_code(res, req, SUCCESS);
-                        size_buf = get_size_for_serialized_response_buffer(res);
-                        res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
-                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-                        if (rc < 0) {
-                            perror("  send() failed");
-                            close_conn = TRUE;
-                            cpt_response_destroy(res);
-                            break;
-                        }
-                        free(res_packet);
+//
+//                    if (req->channel_id != 0) // only checks for global channel at the moment
+//                    {
+//                        if (req->channel_id > 65535 || req->channel_id < 0) {
+//                            cpt_response_code(res, req, UKNOWN_CHANNEL);
+//                        }
+//                        else {
+//                            size_buf = get_size_for_serialized_response_buffer(res);
+//                            res_packet = calloc(size_buf, sizeof(uint8_t));
+//                            cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
+//                            rc = send(fds[i].fd, res_packet, size_buf, 0);
+//                            if (rc < 0) {
+//                                perror("  send() failed");
+//                                close_conn = TRUE;
+//                            }
+//                            cpt_response_destroy(res);
+//                            break;
+//                        }
+//                    }
+//
+//                    printf("MESSAGE: %s\n", req->msg);
+//
+//
+//                    // If it SEND then it's good
+//                    if (req->cmd_code != SEND) {
+//                        cpt_response_code(res, req, UKNOWN_CMD);
+//                        size_buf = get_size_for_serialized_response_buffer(res);
+//                        res_packet = calloc(size_buf, sizeof(uint8_t));
+//                        cpt_serialize_response(res, res_packet, TRUE, 0, 0, 0, NULL);
+//                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+//                        if (rc < 0) {
+//                            perror("  send() failed");
+//                            close_conn = TRUE;
+//                        }
+//                        cpt_response_destroy(res);
+//                        break;
+//                    }
+//                    else
+//                    {
+//                        cpt_response_code(res, req, user_node.user_fd, SUCCESS);
+//                        size_buf = get_size_for_serialized_response_buffer(res);
+//                        res_packet = calloc(size_buf, sizeof(uint8_t));
+//                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
+//                        rc = send(fds[i].fd, res_packet, size_buf, 0);
+//                        if (rc < 0) {
+//                            perror("  send() failed");
+//                            close_conn = TRUE;
+//                            cpt_response_destroy(res);
+//                            break;
+//                        }
+//                        free(res_packet);
                         for (int conn = 1; conn < current_size; ++conn) {
                             // response_code will be MESSAGE
                             if (conn != i) {
                                 int user_id = fds[conn].fd;
-                                cpt_response_code(res, req, MESSAGE);
+                                cpt_response_code(res, req, fds[i].fd, MESSAGE);
                                 size_buf = get_size_for_serialized_response_buffer(res);
                                 res_packet = calloc(size_buf, sizeof(uint8_t));
-                                cpt_serialize_response(res, res_packet, TRUE, GLOBAL_CHANNEL, (uint16_t) fds[i].fd,
-                                                       req->msg_len, (uint8_t *) req->msg);
+                                cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, (uint16_t)fds[i].fd, res->data->msg_len, res->data->msg);
                                 rc = send(user_id, res_packet, size_buf, 0);
                                 if (rc < 0) {
                                     perror("  send() failed");
@@ -382,7 +381,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 free(res_packet);
                             }
                         }
-                    }
+
                     cpt_request_destroy(req);
                     cpt_response_destroy(res);
                 } while (FALSE);

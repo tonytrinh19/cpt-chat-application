@@ -12,27 +12,27 @@ CptResponse *cpt_response_init() {
 }
 
 //typedef struct cpt_sub_packet {
-//    uint16_t channel_id;
-//    uint16_t user_fd;
-//    uint16_t msg_len;
+//    uint16_t channel_id;  // 2
+//    uint16_t user_fd;     // 2
+//    uint16_t msg_len;     // 2
 //    char* msg;
 //}CptSubPacket;
 //
 //
 //typedef struct cpt_response {
-//    uint8_t code;
-//    uint16_t data_size;
+//    uint8_t code;          // 1
+//    uint16_t data_size;    // 2
 //    CptSubPacket *data;
 //} CptResponse;
 
-void cpt_response_code(CptResponse *response, CptRequest *request, struct pollfd fds, uint8_t res_code) {
+void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, uint8_t res_code) {
     response->code = res_code;
 
     switch (res_code) {
         case SUCCESS:    // 1
         {
             response->data->channel_id = request->channel_id;
-            response->data->user_fd = (uint16_t) fds.fd;
+            response->data->user_fd = (uint16_t) fds;
             response->data->msg = strdup("Operation was successful\n");
             response->data->msg_len = (uint16_t) strlen(response->data->msg);
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
@@ -41,7 +41,7 @@ void cpt_response_code(CptResponse *response, CptRequest *request, struct pollfd
         case MESSAGE:    // 2
         {
             response->data->channel_id = request->channel_id;
-            response->data->user_fd = (uint16_t) fds.fd;
+            response->data->user_fd = (uint16_t) fds;
             response->data->msg = strdup(request->msg);
             response->data->msg_len = (uint16_t) strlen(response->data->msg);
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
@@ -137,7 +137,7 @@ void cpt_response_code(CptResponse *response, CptRequest *request, struct pollfd
 //            break;
         default:
             response->data->channel_id = request->channel_id;
-            response->data->user_fd = (uint16_t) fds.fd;
+            response->data->user_fd = (uint16_t) fds;
             response->data->msg = strdup("This is default\n");
             response->data->msg_len = (uint16_t) strlen(response->data->msg);
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
@@ -148,6 +148,13 @@ void cpt_response_code(CptResponse *response, CptRequest *request, struct pollfd
 void cpt_response_destroy(CptResponse *response) {
     response->code = 0;
     response->data_size = 0;
+    response->data->msg_len = 0;
+    response->data->channel_id = 0;
+    response->data->user_fd = 0;
+    free(response->data->msg);
+    response->data->msg = NULL;
+
+    free(response->data);
     response->data = NULL;
 
     free(response);
@@ -161,47 +168,45 @@ void cpt_response_reset(CptResponse *response) {
     response->data_size = 0;
 }
 
-void cpt_serialize_response(CptResponse *res, uint8_t *buffer, bool hasSubPacket, uint16_t channel_id, uint16_t user_id,
+size_t cpt_serialize_response(CptResponse *res, uint8_t* buffer, uint16_t data_size, uint16_t channel_id, uint16_t user_id,
                             uint16_t msg_len, uint8_t *msg) {
+    size_t res_size;
+
     *(buffer++) = res->code;
 
-    uint16_t first_half_data_size = res->data_size;
+    uint16_t first_half_data_size = data_size;
     uint16_t second_half_data_size = first_half_data_size & 255;
     first_half_data_size >>= 8;
-
     *(buffer++) = (uint8_t) first_half_data_size;
     *(buffer++) = (uint8_t) second_half_data_size;
 
-    if (hasSubPacket) {
-        uint16_t first_half_channel_id = channel_id;
-        uint16_t second_half_channel_id = first_half_channel_id & 255;
-        first_half_channel_id >>= 8;
-        *(buffer++) = (uint8_t) first_half_channel_id;
-        *(buffer++) = (uint8_t) second_half_channel_id;
 
-        uint16_t first_half_user_id = user_id;
-        uint16_t second_half_user_id = first_half_user_id & 255;
-        first_half_user_id >>= 8;
-        *(buffer++) = (uint8_t) first_half_user_id;
-        *(buffer++) = (uint8_t) second_half_user_id;
+    uint16_t first_half_channel_id = channel_id;
+    uint16_t second_half_channel_id = first_half_channel_id & 255;
+    first_half_channel_id >>= 8;
+    *(buffer++) = (uint8_t) first_half_channel_id;
+    *(buffer++) = (uint8_t) second_half_channel_id;
 
-        uint16_t first_half_msg_len = msg_len;
-        uint16_t second_half_msg_len = first_half_msg_len & 255;
-        first_half_msg_len >>= 8;
+    uint16_t first_half_user_id = user_id;
+    uint16_t second_half_user_id = first_half_user_id & 255;
+    first_half_user_id >>= 8;
+    *(buffer++) = (uint8_t) first_half_user_id;
+    *(buffer++) = (uint8_t) second_half_user_id;
 
-        *(buffer++) = (uint8_t) first_half_msg_len;
-        *(buffer++) = (uint8_t) second_half_msg_len;
-        for (int i = 0; i < msg_len; ++i) {
-            *(buffer++) = *msg++;
-        }
+    uint16_t first_half_msg_len = msg_len;
+    uint16_t second_half_msg_len = first_half_msg_len & 255;
+    first_half_msg_len >>= 8;
+
+    *(buffer++) = (uint8_t) first_half_msg_len;
+    *(buffer++) = (uint8_t) second_half_msg_len;
+    for (int i = 0; i < msg_len; ++i) {
+        *(buffer++) = *msg++;
     }
-    else
-    {
-        for (int i = 0; i < res->data_size; ++i) {
-            *(buffer++) = *res->data++;
-        }
-    }
+
     *buffer = '\0';
+    res_size = strlen((char*)buffer);
+
+    return res_size;
 }
 
 CptResponse *cpt_parse_response(uint8_t *res_buf, size_t res_size) {
@@ -222,10 +227,10 @@ CptResponse *cpt_parse_response(uint8_t *res_buf, size_t res_size) {
         first_half_data_size <<= 8;
         uint16_t second_half_data_size = *(res_buf++);
         cpt_res->data_size = first_half_data_size | second_half_data_size;
-        cpt_res->data = malloc(cpt_res->data_size * sizeof(uint8_t));
+        cpt_res->data->msg = malloc(cpt_res->data_size * sizeof(uint8_t));
 
         for (int i = 0; i < cpt_res->data_size; ++i) {
-            cpt_res->data[i] = *(res_buf++);
+            cpt_res->data->msg[i] = *(res_buf++);
         }
     }
     return cpt_res;
