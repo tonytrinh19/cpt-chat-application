@@ -46,6 +46,7 @@ int get_user_linked_list_length(UserLinkedList *pList);
 void delete_user_linked_list(UserLinkedList *pList);
 int is_user_linked_list_empty(UserLinkedList * pList);
 void display_user_linked_list(UserLinkedList* pList);
+int search(UserNode * head, uint8_t user_fd);
 
 
 #endif //TEMPLATE2_LINKED_LIST_H

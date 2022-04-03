@@ -59,10 +59,15 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, 
 //            response->data = (uint8_t *) strdup("Message could not be delivered\n");
 //            response->data_size = (uint16_t) strlen((const char *) response->data);
 //            break;
-//        case CHANNEL_CREATED:   // 6
-//            response->data = (uint8_t *) strdup("Channel created\n");
-//            response->data_size = (uint16_t) strlen((const char *) response->data);
-//            break;
+        case CHANNEL_CREATED:   // 6
+        {
+            response->data->channel_id = request->channel_id;
+            response->data->user_fd = (uint16_t) fds;
+            response->data->msg = strdup("Channel created\n");
+            response->data->msg_len = (uint16_t) strlen(response->data->msg);
+            response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
+            break;
+        }
 //        case CHANNEL_CREATION_ERROR:    //7
 //            response->data = (uint8_t *) strdup("Channel cannot be created\n");
 //            response->data_size = (uint16_t) strlen((const char *) response->data);
@@ -216,23 +221,38 @@ CptResponse *cpt_parse_response(uint8_t *res_buf, size_t res_size) {
     }
 
     CptResponse *cpt_res = calloc(res_size, sizeof(uint8_t));
+    cpt_res->data = calloc(res_size, sizeof(uint8_t));
 
-    if (cpt_res == NULL) {
-        printf("malloc error: cpt_parse_response()\n");
-        return NULL;
-    } else {
-        cpt_res->code = *(res_buf++);
-        //data_size
-        uint16_t first_half_data_size = *(res_buf++);
-        first_half_data_size <<= 8;
-        uint16_t second_half_data_size = *(res_buf++);
-        cpt_res->data_size = first_half_data_size | second_half_data_size;
-        cpt_res->data->msg = malloc(cpt_res->data_size * sizeof(uint8_t));
+    cpt_res->code = *(res_buf++);
 
-        for (int i = 0; i < cpt_res->data_size; ++i) {
-            cpt_res->data->msg[i] = *(res_buf++);
-        }
+    //data_size
+    uint16_t first_half_data_size = *(res_buf++);
+    first_half_data_size <<= 8;
+    uint16_t second_half_data_size = *(res_buf++);
+    cpt_res->data_size = first_half_data_size | second_half_data_size;
+
+    // channel_id
+    uint16_t first_half_channel_id = *(res_buf++);
+    first_half_channel_id <<= 8;
+    uint16_t second_half_channel_id = *(res_buf++);
+    cpt_res->data->channel_id = first_half_channel_id | second_half_channel_id;
+
+    uint16_t first_half_user_id = *(res_buf++);
+    first_half_user_id <<= 8;
+    uint16_t second_half_user_id = *(res_buf++);
+    cpt_res->data->user_fd = first_half_user_id | second_half_user_id;
+
+    uint16_t first_half_msg_len = *(res_buf++);
+    first_half_msg_len <<= 8;
+    uint16_t second_half_msg_len = *(res_buf++);
+    cpt_res->data->msg_len = first_half_msg_len | second_half_msg_len;
+
+    cpt_res->data->msg = malloc(cpt_res->data_size * sizeof(uint8_t));
+
+    for (int i = 0; i < cpt_res->data_size; ++i) {
+        cpt_res->data->msg[i] = (char) *(res_buf++);
     }
+
     return cpt_res;
 }
 

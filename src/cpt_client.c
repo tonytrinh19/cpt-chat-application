@@ -17,8 +17,7 @@ void *listeningThread(void *args) {
     while (TRUE) {
         size_t rc;
         uint8_t buffer[MSG_MAX_LEN];
-        rc = recv(*sd, buffer,
-                  sizeof(buffer), 0);
+        rc = recv(*sd, buffer, sizeof(buffer), 0);
         if (rc < 0) {
             perror("recv() failed");
             break;
@@ -33,28 +32,46 @@ void *listeningThread(void *args) {
             printf("Something went wrong with the server\n");
             break;
         }
+        printf("channel_id = %d\n", res->data->channel_id);
+        printf("user_fd = %d\n", res->data->user_fd);
+        printf("msg_len = %d\n", res->data->msg_len);
 
-        if (res->code == MESSAGE) {
-            uint16_t first_half_channel_id = res->data->channel_id;
-            first_half_channel_id <<= 8;
-            uint16_t second_half_channel_id = res->data->channel_id;
-            channel_id = first_half_channel_id | second_half_channel_id;
-
-            uint16_t first_half_user_id = res->data->user_fd;
-            first_half_user_id <<= 8;
-            uint16_t second_half_user_id = res->data->user_fd;
-            user_id = first_half_user_id | second_half_user_id;
-
-            // Skips the msg_len for now
-            res->data->msg++;
-            res->data->msg++;
-            printf("%d: %d\n", user_id, res->data->user_fd);
-        } else if (res->code == SUCCESS) {
-            // DO nothing
-            printf("\n");
-        } else {
-            printf("%s\n", (char *) res->data);
+        switch (res->code) {
+            case(SUCCESS):
+                printf("server - %s\n", res->data->msg);
+                break;
+            case(CHANNEL_CREATED):
+                printf("server - %s\n", res->data->msg);
+                break;
+            case(CHANNEL_CREATION_ERROR):
+                printf("server - %s\n", res->data->msg);
+                break;
+            default:
+                printf("server - %s\n", res->data->msg);
+                break;
         }
+
+//        if (res->code == MESSAGE) {
+//            uint16_t first_half_channel_id = res->data->channel_id;
+//            first_half_channel_id <<= 8;
+//            uint16_t second_half_channel_id = res->data->channel_id;
+//            channel_id = first_half_channel_id | second_half_channel_id;
+//
+//            uint16_t first_half_user_id = res->data->user_fd;
+//            first_half_user_id <<= 8;
+//            uint16_t second_half_user_id = res->data->user_fd;
+//            user_id = first_half_user_id | second_half_user_id;
+//
+//            // Skips the msg_len for now
+//            res->data->msg++;
+//            res->data->msg++;
+//            printf("%d: %d\n", user_id, res->data->user_fd);
+//        } else if (res->code == SUCCESS) {
+//            // DO nothing
+//            printf("\n");
+//        } else {
+//            printf("%s\n", (char *) res->data);
+//        }
     }
     return NULL;
 }

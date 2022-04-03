@@ -169,5 +169,18 @@ void display_user_linked_list(UserLinkedList* pList) {
 }
 
 
+int search(UserNode * head, uint8_t user_fd) {
+    int index = 0;
+    while (head) {
+        if (head->user_fd == user_fd) {
+            return index;
+        } else {
+            head = head->next;
+            index++;
+        }
+    }
+}
+
+
 
 
