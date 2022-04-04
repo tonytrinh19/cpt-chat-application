@@ -46,6 +46,9 @@ void *listeningThread(void *args) {
             case(CHANNEL_CREATION_ERROR):
                 printf("server - %s\n", res->data->msg);
                 break;
+            case(JOIN_CHANNEL):
+                printf("server - %s\n", res->data->msg);
+                break;
             default:
                 printf("server - %s\n", res->data->msg);
                 break;

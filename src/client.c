@@ -189,10 +189,12 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             uint8_t cmd_code = cmd_val(parse_message);
             request->cmd_code = cmd_code;
 
-            // CREATE_CHANNEL     JOIN_CHANNEL    LEAVE_CHANNEL
-            if (cmd_code == 4 || cmd_code == 5 || cmd_code == 6) {
-                parse_message = strtok(NULL, " ");
-                request->channel_id = (uint16_t) atoi(parse_message);
+            parse_message = strtok(NULL, " ");
+            if (cmd_code == 5) { // JOIN_CHANNEL
+                request->channel_id = (uint16_t) strtol(parse_message, NULL, 10);
+            }
+            else if (cmd_code == 6) {    // LEAVE_CHANNEL
+                request->channel_id = 0;
             }
             free(message_copy);
             cpt_request_msg(request, message);

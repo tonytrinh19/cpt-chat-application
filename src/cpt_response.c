@@ -68,18 +68,28 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, 
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
             break;
         }
-//        case CHANNEL_CREATION_ERROR:    //7
-//            response->data = (uint8_t *) strdup("Channel cannot be created\n");
-//            response->data_size = (uint16_t) strlen((const char *) response->data);
-//            break;
+        case CHANNEL_CREATION_ERROR:    //7
+        {
+            response->data->channel_id = request->channel_id;
+            response->data->user_fd = (uint16_t) fds;
+            response->data->msg = strdup("Channel cannot be created\n");
+            response->data->msg_len = (uint16_t) strlen(response->data->msg);
+            response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
+            break;
+        }
 //        case CHANNEL_DESTROYED:    //8
 //            response->data = (uint8_t *) strdup("Channel is destroyed\n");
 //            response->data_size = (uint16_t) strlen((const char *) response->data);
 //            break;
-//        case USER_JOINED_CHANNEL:   // 9
-//            response->data = (uint8_t *) strdup("NEW client joins the channel\n");
-//            response->data_size = (uint16_t) strlen((const char *) response->data);
-//            break;
+        case USER_JOINED_CHANNEL:   // 9
+        {
+            response->data->channel_id = request->channel_id;
+            response->data->user_fd = (uint16_t) fds;
+            response->data->msg = strdup("Joined new channel\n");
+            response->data->msg_len = (uint16_t) strlen(response->data->msg);
+            response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
+            break;
+        }
 //        case USER_LEFT_CHANNEL:     // 10
 //            response->data = (uint8_t *) strdup("User leaves the channel\n");
 //            response->data_size = (uint16_t) strlen((const char *) response->data);
