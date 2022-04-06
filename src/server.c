@@ -288,24 +288,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
                     printf("MESSAGE: %s\n", req->msg);
 
-                    /** <Hyung edit start> */
-//                    if (req->cmd_code == LOGOUT) {
-////                        cpt_response_code(res, req, USER_DISCONNECTED);
-//                        close(fds[i].fd);
-//                    }
-//                    if (req->cmd_code == LOGIN) {
-//                        cpt_response_code(res, req, USER_CONNECTED);
-//                        size_buf = get_size_for_serialized_response_buffer(res);
-//                        res_packet = calloc(size_buf, sizeof(uint8_t));cpt_serialize_response(res, res_packet, TRUE, 0, sender_id, 0, "NEW USER CONNECTED\n");
-//                        rc = send(sender_id, res_packet, size_buf, 0);
-//                        if (rc < 0) {
-//                            perror("  send() failed");
-//                            close_conn = TRUE;
-//                        }
-//                    }
-                    /** </Hyung edit end> */
-
-
                     // If it SEND then it's good
                     if (req->cmd_code != SEND) {
                         cpt_response_code(res, req, UKNOWN_CMD);

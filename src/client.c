@@ -17,6 +17,7 @@
 
 #include "cpt_client.h"
 #include "linked_list.h"
+#include "cpt_response.h"
 
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
@@ -159,7 +160,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             // Take input from client and send it to the server
             request->version = 3; // Version 3
             request->cmd_code = SEND; // SEND Message
-            request->channel_id = 0; // Global channel
+            request->channel_id = GLOBAL_CHANNEL; // Global channel
             char message[MSG_MAX_LEN];
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
