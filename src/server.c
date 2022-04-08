@@ -270,6 +270,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                     CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
                     CptResponse *res = cpt_response_init();
 
+                    printf("test\n");
 
                     printf("\n\n<CLIENT DATA>\nfds[i].fd = %d\ncmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                            fds[i].fd, req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
@@ -399,11 +400,12 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         }
                         free(res_packet);
                         break;
-                    } else if (req->cmd_code == JOIN_CHANNEL) {
+                    }
+                    else if (req->cmd_code == JOIN_CHANNEL) {
                         char *parse_channel;
-                        printf("msg = %s\n", req->msg);
                         parse_channel = strtok(req->msg, " ");
                         parse_channel = strtok(NULL, " ");
+                        printf("New channel %s\n", parse_channel);
                         int new_channel = (int) strtol(parse_channel, NULL, 10);
 
                         if (new_channel > 65535 || new_channel < 0) {
@@ -446,13 +448,13 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 }
                             }
                             display_user_linked_list(user_linked_list[new_channel]);
-                            cpt_response_code(res, req, target.user_fd, USER_JOINED_CHANNEL);
+                            cpt_response_code(res, req, target.user_fd, JOIN_CHANNEL);
                         }
 
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, (uint16_t) new_channel,
-                                               user_node.user_fd, res->data->msg_len, res->data->msg);
+                                               user_node.user_fd, res->data->msg_len, (uint8_t *)res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                                fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
                                res->data->msg_len, res->data->msg);

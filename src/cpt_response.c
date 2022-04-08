@@ -83,7 +83,7 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, 
 //            response->data = (uint8_t *) strdup("Channel is destroyed\n");
 //            response->data_size = (uint16_t) strlen((const char *) response->data);
 //            break;
-        case USER_JOINED_CHANNEL:   // 9
+        case JOIN_CHANNEL:   // 9
         {
             response->data->channel_id = request->channel_id;
             response->data->user_fd = (uint16_t) fds;
