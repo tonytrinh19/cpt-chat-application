@@ -317,14 +317,14 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
-//                        printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
-//                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
-//                        printf("<SEND CLIENT>\n");
-//                        printf("res_code = %d\n", res_packet[0]);
-//                        printf("data_size = %d\n", res_packet[1] + res_packet[2]);
-//                        printf("channel_id = %d\n", res_packet[3] + res_packet[4]);
-//                        printf("user_fd = %d\n", res_packet[5] + res_packet[6]);
-//                        printf("msg_len = %d\n", res_packet[7] + res_packet[8]);
+                        printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
+                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
+                        printf("<SEND CLIENT>\n");
+                        printf("res_code = %d\n", res_packet[0]);
+                        printf("data_size = %d\n", res_packet[1] + res_packet[2]);
+                        printf("channel_id = %d\n", res_packet[3] + res_packet[4]);
+                        printf("user_fd = %d\n", res_packet[5] + res_packet[6]);
+                        printf("msg_len = %d\n", res_packet[7] + res_packet[8]);
 
                         rc = send(user_node.user_fd, res_packet, size_buf, 0);
 
@@ -386,7 +386,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                             int index_delete = 0;
 
                             UserNode target;
-                            /** REMOVE USER AND ADD USER TO CHANNEL **/
+                            /** REMOVE USER FROM PREVIOUS CHANNEL AND ADD USER TO A NEW CHANNEL **/
                             while (get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd != fds[i].fd) {
                                 index_delete++;
                             }
@@ -400,10 +400,20 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                             printf("target_fd = %s\n", target.user_id);
 
                             int index = get_user_linked_list_length(user_linked_list[new_channel]);
-//                            printf("index_get = %d\n", index_get);
+//                            printf("index_get = %d\n", index);
 
-
-                            add_user_element(user_linked_list[new_channel], index, target);
+                            if (index  == 0) {
+                                add_user_element(user_linked_list[new_channel], 0, target);
+                            }
+                            else {
+                                for (int j = 0; j < index; j++) {
+                                    if (get_user_element(user_linked_list[new_channel], j)->user_fd != target.user_fd) {
+                                        printf("user_fd = %d\n", get_user_element(user_linked_list[new_channel], j)->user_fd);
+                                        printf("target_fd = %d\n", get_user_element(user_linked_list[new_channel], j)->user_fd);
+                                        add_user_element(user_linked_list[new_channel], index, target);
+                                    }
+                                }
+                            }
                             display_user_linked_list(user_linked_list[new_channel]);
                             cpt_response_code(res, req, target.user_fd, USER_JOINED_CHANNEL);
                         }
