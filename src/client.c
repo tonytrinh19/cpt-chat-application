@@ -16,7 +16,16 @@
 #include <inttypes.h>
 
 #include "cpt_client.h"
+#include "cpt_response.h"
 #include "linked_list.h"
+#include "common.h"
+
+void *listeningThread(void *args);
+
+uint8_t cmd_val(const char *cmd);
+
+uint16_t current_channel;
+
 
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
@@ -57,6 +66,7 @@ static struct dc_application_settings *create_settings(const struct dc_posix_env
     settings->hostname = dc_setting_string_create(env, err);
     settings->port = dc_setting_uint16_create(env, err);
 
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
     struct options opts[] =
@@ -70,7 +80,7 @@ static struct dc_application_settings *create_settings(const struct dc_posix_env
     // note the trick here - we use calloc and add 1 to ensure the last line is all 0/NULL
     settings->opts.opts = dc_calloc(env, err, (sizeof(opts) / sizeof(struct options)) + 1, sizeof(struct options));
     dc_memcpy(env, settings->opts.opts, opts, sizeof(opts));
-    settings->opts.flags = "c:h:p";
+    settings->opts.flags = "c:h:p:";
     settings->opts.env_prefix = "CPT_CHAT_";
 
     return (struct dc_application_settings *) settings;
@@ -94,6 +104,18 @@ static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unus
 }
 
 
+uint8_t cmd_val(const char *cmd) {
+    if (strcmp(cmd, "SEND") == 0) return SEND;
+    else if (strcmp(cmd, "LOGOUT") == 0) return LOGOUT;
+    else if (strcmp(cmd, "GET_USERS") == 0) return GET_USERS;
+    else if (strcmp(cmd, "CREATE_CHANNEL") == 0) return CREATE_CHANNEL;
+    else if (strcmp(cmd, "JOIN_CHANNEL") == 0) return JOIN_CHANNEL;
+    else if (strcmp(cmd, "LEAVE_CHANNEL") == 0) return LEAVE_CHANNEL;
+    else if (strcmp(cmd, "LOGIN") == 0) return LOGIN;
+    else return 0;
+}
+
+
 static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct dc_error *err,
                struct dc_application_settings *settings) {
     struct application_settings *app_settings;
@@ -112,6 +134,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
     hostname = dc_setting_string_get(env, app_settings->hostname);
     port = dc_setting_uint16_get(env, app_settings->port);
+
     ret_val = 0;
 
     // My program
@@ -154,24 +177,63 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
         // Create a thread to listen to server's messages
         pthread_create(&thread_id, NULL, listeningThread, (void *) &sd);
 
+        // LOGIN
+        request->cmd_code = LOGIN;
+        request->version = 3;
+        request->channel_id = 0;
+        size_t size_buf = get_size_for_serialized_request_buffer(request);
+        uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
+        cpt_serialize_request(request, buff);
+        printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
+               request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
+
+        rc = send(sd, buff, size_buf, 0);
+        if (rc < 0) {
+            perror("send() failed");
+            break;
+        }
+        cpt_request_reset(request);
+        free(buff);
+
+
+
         // An infinite loop that listens for user's keyboard and send the message
         while (TRUE) {
             // Take input from client and send it to the server
             request->version = 3; // Version 3
-            request->cmd_code = SEND; // SEND Message
-            request->channel_id = 0; // Global channel
             char message[MSG_MAX_LEN];
+
+            request->channel_id = current_channel;
+            printf("Inside client channel id = %d\n", request->channel_id);
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
-
             message[message_len] = '\0';
+//            printf("this is message = %s\n", message);
+            char *message_copy = strdup(message);
+
+            char *parse_message;
+            parse_message = strtok(message_copy, " ");
+            uint8_t cmd_code = cmd_val(parse_message);
+            request->cmd_code = cmd_code;
+
+            parse_message = strtok(NULL, " ");
 
 
+            if (cmd_code == 1) {    // SEND
+                request->channel_id = current_channel;
+            } else if (cmd_code == 5) { // JOIN_CHANNEL
+                request->channel_id = (uint16_t) strtol(parse_message, NULL, 10);
+            } else if (cmd_code == 6) {    // LEAVE_CHANNEL
+                request->channel_id = 0;
+            }
+            free(message_copy);
             cpt_request_msg(request, message);
 
             size_t size_buf = get_size_for_serialized_request_buffer(request);
             uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
             cpt_serialize_request(request, buff);
+            printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
+                   request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
 
             rc = send(sd, buff, size_buf, 0);
             if (rc < 0) {
@@ -189,5 +251,79 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     /* Close down any open socket descriptors                              */
     if (sd != -1) close(sd);
     return ret_val;
+}
+
+
+void *listeningThread(void *args) {
+    int *sd = (int *) args;
+    uint16_t channel_id;
+    uint16_t user_id;
+    while (TRUE) {
+        size_t rc;
+        uint8_t buffer[MSG_MAX_LEN];
+        rc = recv(*sd, buffer, sizeof(buffer), 0);
+        if (rc < 0) {
+            perror("recv() failed");
+            break;
+        } else if (rc == 0) {
+            printf("The server closed the connection\n");
+            break;
+        }
+        buffer[rc] = '\0';
+
+        CptResponse *res = cpt_parse_response(buffer, rc);
+        if (res == NULL) {
+            printf("Something went wrong with the server\n");
+            break;
+        }
+        printf("INSIDE THREAD : channel_id = %d\n", current_channel);
+        printf("< Thread data >\n");
+        printf("res_code = %d\n", res->code);
+        printf("data_size = %d\n", res->data_size);
+        printf("channel_id = %d\n", res->data->channel_id);
+        printf("user_fd = %d\n", res->data->user_fd);
+        printf("msg_len = %d\n", res->data->msg_len);
+
+        // When receive JOIN_CHANNEL res_cmd, change current_channel to whatever channel is being sent back
+        current_channel = res->data->channel_id;
+        switch (res->code) {
+            case (SEND):
+                printf("Message sent successfully\n");
+                break;
+            case (LOGIN):
+            case (CHANNEL_CREATED):
+            case (CHANNEL_CREATION_ERROR):
+            case (JOIN_CHANNEL):
+            default:
+                printf("(Channel %d)%d: %s\n", res->data->channel_id, res->data->user_fd, res->data->msg);
+                break;
+        }
+
+        // This shit is doing some magical things dont touch
+//        if (res->code == MESSAGE) {
+//            uint16_t first_half_channel_id = res->data->channel_id;
+//            first_half_channel_id <<= 8;
+//            uint16_t second_half_channel_id = res->data->channel_id;
+//            channel_id = first_half_channel_id | second_half_channel_id;
+//
+//            uint16_t first_half_user_id = res->data->user_fd;
+//            first_half_user_id <<= 8;
+//            uint16_t second_half_user_id = res->data->user_fd;
+//            user_id = first_half_user_id | second_half_user_id;
+//
+//            // Skips the msg_len for now
+//            res->data->msg++;
+//            res->data->msg++;
+//            printf("%d: %d\n", user_id, res->data->user_fd);
+//
+//            printf("%s\n", res->data->msg);
+//        } else
+        if (res->code == SEND) {
+            // DO nothing
+        } else {
+            printf("%s\n", (char *) res->data);
+        }
+    }
+    return NULL;
 }
 

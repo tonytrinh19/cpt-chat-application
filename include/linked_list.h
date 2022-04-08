@@ -35,24 +35,6 @@ typedef struct user_linked_list {
 }UserLinkedList;
 
 
-typedef struct channel_node {
-    uint16_t channel_id;
-    UserLinkedList *user_linked_list;
-    struct channel_node *next;
-}ChannelNode;
-
-
-typedef struct channel_linked_list {
-    int channel_count;
-    ChannelNode headerNode;
-}ChannelLinkedList;
-
-
-typedef struct server_info {
-    ChannelLinkedList* channel_linked_list;
-}ServerInfo;
-
-
 
 UserLinkedList* create_user_linked_list();
 int add_user_element(UserLinkedList *pList, int position, UserNode element);
@@ -63,17 +45,8 @@ void clear_user_linked_list(UserLinkedList *pList);
 int get_user_linked_list_length(UserLinkedList *pList);
 void delete_user_linked_list(UserLinkedList *pList);
 int is_user_linked_list_empty(UserLinkedList * pList);
-
-
-ChannelLinkedList* create_channel_linked_list();
-int add_channel_element(ChannelLinkedList *pList, int position, ChannelNode element);
-int remove_channel_element (ChannelLinkedList *pList, int position);
-ChannelNode* get_channel_element(ChannelLinkedList *pList, int position);
-
-void clear_channel_linked_list(ChannelLinkedList *pList);
-int get_channel_linked_list_length(ChannelLinkedList *pList);
-void delete_channel_linked_list(ChannelLinkedList *pList);
-int is_channel_linked_list_empty(ChannelLinkedList * pList);
+void display_user_linked_list(UserLinkedList* pList);
+int search(UserNode * head, uint8_t user_fd);
 
 
 #endif //TEMPLATE2_LINKED_LIST_H

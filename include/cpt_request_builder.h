@@ -18,15 +18,6 @@
 // school: 10.65.0.209, 10.65.15.72, 192.168.1.110
 
 
-enum CMD {
-    SEND = 1,
-    LOGOUT,
-    GET_USERS,
-    CREATE_CHANNEL,
-    JOIN_CHANNEL,
-    LEAVE_CHANNEL,
-    LOGIN
-};
 
 typedef struct cpt_request {
     uint8_t version;
