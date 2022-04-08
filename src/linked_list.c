@@ -49,12 +49,12 @@ int add_user_element(UserLinkedList *pList, int position, UserNode element) {
                 ret = TRUE;
             }
             else {
-                printf("ERROR: Memory allocation failed : addLLElement()\n");
+                printf("ERROR: Memory allocation failed : add_user_element()\n");
                 return ret;
             }
         }
         else {
-            printf("ERROR: [%d] Index out of rage: addLLElement()\n", position);
+            printf("ERROR: [%d] Index out of rage: add_user_element()\n", position);
         }
     }
     return ret;

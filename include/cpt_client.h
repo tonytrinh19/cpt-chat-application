@@ -18,7 +18,6 @@ struct application_settings
     struct dc_setting_uint16 *channel;
 };
 
-void *listeningThread(void *args);
 
 size_t get_size_for_serialized_request_buffer(const CptRequest *request);
 

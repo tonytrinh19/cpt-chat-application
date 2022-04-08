@@ -24,31 +24,7 @@ typedef struct cpt_response {
     CptSubPacket *data;
 } CptResponse;
 
-enum server_res_code {
-    SUCCESS = 1,
-    MESSAGE,
-    USER_CONNECTED,
-    USER_DISCONNECTED,
-    MESSAGE_FAILED,
-    CHANNEL_CREATED,
-    CHANNEL_CREATION_ERROR,
-    CHANNEL_DESTROYED,
-    USER_JOINED_CHANNEL,
-    USER_LEFT_CHANNEL,
-    USER_LIST,
-    UKNOWN_CMD,
-    LOGIN_FAIL,
-    UKNOWN_CHANNEL,
-    BAD_VERSION,
-    SEND_FAILED,
-    CHAN_ID_OVERFLOW,
-    MSG_OVERFLOW,
-    MSG_LEN_OVERFLOW,
-    CHAN_EMPTY,
-    INVALID_ID,
-    UNAUTH_ACCESS,
-    SERVER_FULL
-};
+
 
 void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, uint8_t res_code);
 

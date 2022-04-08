@@ -17,6 +17,7 @@
 
 #include "cpt_response.h"
 #include "cpt_server.h"
+#include "common.h"
 
 
 int main(int argc, char *argv[]) {
@@ -116,7 +117,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     // Default(Channel 0) User Linked List Create
     user_linked_list[0] = create_user_linked_list();
     UserNode user_node;
-
+    uint16_t current_channel;
 
 
     /* Create an AF_INET6 stream socket to receive incoming      */
@@ -275,7 +276,34 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
 
                     user_node.user_fd = (uint8_t) fds[i].fd;
+                    if (req->cmd_code == SEND) {
+                        char* parse_message;
+                        parse_message = strtok(req->msg, " ");
+                        user_node.user_id = (uint8_t *)strdup(parse_message);
+                        display_user_linked_list(user_linked_list[0]);
 
+                        cpt_response_code(res, req, (uint8_t) fds[i].fd, SEND);
+                        size_buf = get_size_for_serialized_response_buffer(res);
+                        res_packet = calloc(size_buf, sizeof(uint8_t));
+                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
+                        printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
+                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
+                        printf("<SEND CLIENT>\n");
+                        printf("res_code = %d\n", res_packet[0]);
+                        printf("data_size = %d\n", res_packet[1] + res_packet[2]);
+                        printf("channel_id = %d\n", res_packet[3] + res_packet[4]);
+                        printf("user_fd = %d\n", res_packet[5] + res_packet[6]);
+                        printf("msg_len = %d\n", res_packet[7] + res_packet[8]);
+
+                        rc = send(user_node.user_fd, res_packet, size_buf, 0);
+
+                        if (rc < 0) {
+                            perror("  send() failed");
+                            close_conn = TRUE;
+                        }
+                        free(res_packet);
+                        break;
+                    }
 
                     if (req->cmd_code == LOGIN) {
                         char* parse_username;
@@ -285,7 +313,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         add_user_element(user_linked_list[0], i - 1, user_node);
                         display_user_linked_list(user_linked_list[0]);
 
-                        cpt_response_code(res, req, (uint8_t) fds[i].fd, SUCCESS);
+                        cpt_response_code(res, req, (uint8_t) fds[i].fd, LOGIN);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
@@ -356,7 +384,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         }
                         else {
                             int index_delete = 0;
-                            int index_get = 0;
+
                             UserNode target;
                             /** REMOVE USER AND ADD USER TO CHANNEL **/
                             while (get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd != fds[i].fd) {
@@ -366,16 +394,17 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 target.user_fd = get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd;
                                 target.user_id = get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_id;
                                 // Free user_id ?
-                                remove_user_element(user_linked_list[res->data->channel_id], index_delete);
+//                                remove_user_element(user_linked_list[0], index_delete);
                             }
                             printf("target_fd = %d\n", target.user_fd);
                             printf("target_fd = %s\n", target.user_id);
 
-                            while (get_user_element(user_linked_list[new_channel], index_get) != NULL) {
-                                index_get++;
-                            }
+                            int index = get_user_linked_list_length(user_linked_list[new_channel]);
 //                            printf("index_get = %d\n", index_get);
-                            add_user_element(user_linked_list[new_channel], index_get + 1, target);
+
+
+                            add_user_element(user_linked_list[new_channel], index, target);
+                            display_user_linked_list(user_linked_list[new_channel]);
                             cpt_response_code(res, req, target.user_fd, USER_JOINED_CHANNEL);
                         }
 

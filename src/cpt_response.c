@@ -1,5 +1,6 @@
 #include "cpt_response.h"
 #include "linked_list.h"
+#include "common.h"
 
 CptResponse *cpt_response_init() {
     CptResponse *response = calloc(1, sizeof(CptResponse));
@@ -29,16 +30,25 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, 
     response->code = res_code;
 
     switch (res_code) {
-        case SUCCESS:    // 1
+        case SEND:
         {
             response->data->channel_id = request->channel_id;
             response->data->user_fd = (uint16_t) fds;
-            response->data->msg = strdup("Operation was successful\n");
+            response->data->msg = strdup("Message sent\n");
             response->data->msg_len = (uint16_t) strlen(response->data->msg);
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
             break;
         }
-        case MESSAGE:    // 2
+        case LOGIN:    // 7
+        {
+            response->data->channel_id = request->channel_id;
+            response->data->user_fd = (uint16_t) fds;
+            response->data->msg = strdup("Login successful\n");
+            response->data->msg_len = (uint16_t) strlen(response->data->msg);
+            response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
+            break;
+        }
+        case MESSAGE:    // 8
         {
             response->data->channel_id = request->channel_id;
             response->data->user_fd = (uint16_t) fds;

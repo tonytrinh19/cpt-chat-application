@@ -16,9 +16,17 @@
 #include <inttypes.h>
 
 #include "cpt_client.h"
+#include "cpt_response.h"
 #include "linked_list.h"
+#include "common.h"
+
+void *listeningThread(void *args);
+
+
 
 uint8_t cmd_val(const char* cmd);
+uint16_t current_channel;
+
 
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
@@ -178,6 +186,8 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 //            request->channel_id = channel; // Global channel
             char message[MSG_MAX_LEN];
 
+            request->channel_id = current_channel;
+            printf("Inside client channel id = %d\n", request->channel_id);
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
             message[message_len] = '\0';
@@ -190,7 +200,12 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             request->cmd_code = cmd_code;
 
             parse_message = strtok(NULL, " ");
-            if (cmd_code == 5) { // JOIN_CHANNEL
+
+
+            if (cmd_code == 1) {    // SEND
+                request->channel_id = current_channel;
+            }
+            else if (cmd_code == 5) { // JOIN_CHANNEL
                 request->channel_id = (uint16_t) strtol(parse_message, NULL, 10);
             }
             else if (cmd_code == 6) {    // LEAVE_CHANNEL
@@ -202,7 +217,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             size_t size_buf = get_size_for_serialized_request_buffer(request);
             uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
             cpt_serialize_request(request, buff);
-            printf("\n\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
+            printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
                    request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
 
             rc = send(sd, buff, size_buf, 0);
@@ -221,5 +236,78 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     /* Close down any open socket descriptors                              */
     if (sd != -1) close(sd);
     return ret_val;
+}
+
+
+void *listeningThread(void *args) {
+    int *sd = (int *) args;
+    uint16_t channel_id;
+    uint16_t user_id;
+    while (TRUE) {
+        size_t rc;
+        uint8_t buffer[MSG_MAX_LEN];
+        rc = recv(*sd, buffer, sizeof(buffer), 0);
+        if (rc < 0) {
+            perror("recv() failed");
+            break;
+        } else if (rc == 0) {
+            printf("The server closed the connection\n");
+            break;
+        }
+        buffer[rc] = '\0';
+
+        CptResponse *res = cpt_parse_response(buffer, rc);
+        if (res == NULL) {
+            printf("Something went wrong with the server\n");
+            break;
+        }
+        printf("channel_id = %d\n", res->data->channel_id);
+        printf("user_fd = %d\n", res->data->user_fd);
+        printf("msg_len = %d\n", res->data->msg_len);
+        current_channel = res->data->channel_id;
+        switch (res->code) {
+            case(SEND):
+                printf("server - %s\n", res->data->msg);
+                break;
+            case(LOGIN):
+                printf("server - %s\n", res->data->msg);
+                break;
+            case(CHANNEL_CREATED):
+                printf("server - %s\n", res->data->msg);
+                break;
+            case(CHANNEL_CREATION_ERROR):
+                printf("server - %s\n", res->data->msg);
+                break;
+            case(JOIN_CHANNEL):
+                printf("server - %s\n", res->data->msg);
+                break;
+            default:
+                printf("server - %s\n", res->data->msg);
+                break;
+        }
+
+//        if (res->code == MESSAGE) {
+//            uint16_t first_half_channel_id = res->data->channel_id;
+//            first_half_channel_id <<= 8;
+//            uint16_t second_half_channel_id = res->data->channel_id;
+//            channel_id = first_half_channel_id | second_half_channel_id;
+//
+//            uint16_t first_half_user_id = res->data->user_fd;
+//            first_half_user_id <<= 8;
+//            uint16_t second_half_user_id = res->data->user_fd;
+//            user_id = first_half_user_id | second_half_user_id;
+//
+//            // Skips the msg_len for now
+//            res->data->msg++;
+//            res->data->msg++;
+//            printf("%d: %d\n", user_id, res->data->user_fd);
+//        } else if (res->code == SUCCESS) {
+//            // DO nothing
+//            printf("\n");
+//        } else {
+//            printf("%s\n", (char *) res->data);
+//        }
+    }
+    return NULL;
 }
 
