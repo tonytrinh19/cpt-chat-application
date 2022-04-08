@@ -24,7 +24,7 @@
 
 typedef struct user_node {
     uint8_t user_fd;
-    uint8_t *user_id;
+    uint16_t channel;
     struct user_node *next;
 }UserNode;
 
