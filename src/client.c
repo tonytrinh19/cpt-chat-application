@@ -177,12 +177,30 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
         // Create a thread to listen to server's messages
         pthread_create(&thread_id, NULL, listeningThread, (void *) &sd);
 
+        // LOGIN
+        request->cmd_code = LOGIN;
+        request->version = 3;
+        request->channel_id = 0;
+        size_t size_buf = get_size_for_serialized_request_buffer(request);
+        uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
+        cpt_serialize_request(request, buff);
+        printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
+               request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
+
+        rc = send(sd, buff, size_buf, 0);
+        if (rc < 0) {
+            perror("send() failed");
+            break;
+        }
+        cpt_request_reset(request);
+        free(buff);
+
+
+
         // An infinite loop that listens for user's keyboard and send the message
         while (TRUE) {
             // Take input from client and send it to the server
             request->version = 3; // Version 3
-//            request->cmd_code = cmd_val(cmd); // SEND Message
-//            request->channel_id = channel; // Global channel
             char message[MSG_MAX_LEN];
 
             request->channel_id = current_channel;

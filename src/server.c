@@ -281,7 +281,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         char *parse_message;
                         char *temp = strdup(req->msg);
                         parse_message = strtok(temp, " ");
-                        user_node.user_id = (uint8_t *) strdup(parse_message);
+
                         display_user_linked_list(user_linked_list[0]);
                         cpt_response_code(res, req, (uint8_t) fds[i].fd, SEND);
                         size_buf = get_size_for_serialized_response_buffer(res);
@@ -338,9 +338,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
                     if (req->cmd_code == LOGIN) {
                         char *parse_username;
-                        parse_username = strtok(req->msg, " ");
-                        parse_username = strtok(NULL, " ");
-                        user_node.user_id = (uint8_t *) strdup(parse_username);
+                        user_node.user_fd = (uint8_t) fds[i].fd;
                         add_user_element(user_linked_list[0], i - 1, user_node);
                         display_user_linked_list(user_linked_list[0]);
 
@@ -348,7 +346,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
-                                               user_node.user_fd, res->data->msg_len, res->data->msg);
+                                               user_node.user_fd, res->data->msg_len, (uint8_t*) res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                                fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
                                res->data->msg_len, res->data->msg);
