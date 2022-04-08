@@ -285,7 +285,6 @@ void *listeningThread(void *args) {
         printf("msg_len = %d\n", res->data->msg_len);
 
         // When receive JOIN_CHANNEL res_cmd, change current_channel to whatever channel is being sent back
-        current_channel = res->data->channel_id;
         switch (res->code) {
             case (SEND):
                 printf("Message sent successfully\n");
@@ -294,8 +293,15 @@ void *listeningThread(void *args) {
             case (CHANNEL_CREATED):
             case (CHANNEL_CREATION_ERROR):
             case (JOIN_CHANNEL):
+                current_channel = res->data->channel_id;
+                break;
             default:
-                printf("(Channel %d)%d: %s\n", res->data->channel_id, res->data->user_fd, res->data->msg);
+                printf("res->data->channel_id: %d\n", res->data->channel_id);
+                printf("current_channel: %d\n", current_channel);
+                if (current_channel == res->data->channel_id)
+                {
+                    printf("(Channel %d)%d: %s\n", res->data->channel_id, res->data->user_fd, res->data->msg);
+                }
                 break;
         }
 

@@ -381,7 +381,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
-                                               user_node.user_fd, res->data->msg_len, res->data->msg);
+                                               user_node.user_fd, res->data->msg_len, (uint8_t *) res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                                fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
                                res->data->msg_len, res->data->msg);
