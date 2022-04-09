@@ -15,16 +15,13 @@ typedef struct cpt_sub_packet {
     uint16_t user_fd;
     uint16_t msg_len;
     char* msg;
-}CptSubPacket;
-
+} CptSubPacket;
 
 typedef struct cpt_response {
     uint8_t code;
     uint16_t data_size;
     CptSubPacket *data;
 } CptResponse;
-
-
 
 void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, uint8_t res_code);
 

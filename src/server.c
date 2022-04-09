@@ -83,7 +83,8 @@ static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unus
     dc_free(env, app_settings->opts.opts, app_settings->opts.opts_size);
     dc_free(env, app_settings, sizeof(struct application_settings));
 
-    if (env->null_free) {
+    if (env->null_free)
+    {
         *psettings = NULL;
     }
 
@@ -240,7 +241,8 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                 close_conn = FALSE;
                 /* Receive all incoming data on this socket            */
                 /* before we loop back and call poll again.            */
-                do {
+                do
+                {
                     /* Receive data on this connection until the         */
                     /* recv fails with EWOULDBLOCK. If any other         */
                     /* failure occurs, we will close the                 */
@@ -262,14 +264,12 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         break;
                     }
 
-
                     /* Data was received                                 */
                     len = rc;
                     printf("  %d bytes received\n", len);
                     // Length is +1 because of the newline character, TODO: watch out for the \n, leave it for now if no problems detected
-                    CptRequest *req = cpt_parse_request((uint8_t *) buffer, len);
+                    CptRequest *req  = cpt_parse_request((uint8_t *) buffer, len);
                     CptResponse *res = cpt_response_init();
-
 
                     printf("\n\n<CLIENT DATA>\nfds[i].fd = %d\ncmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                            fds[i].fd, req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
@@ -339,6 +339,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                     if (req->cmd_code == LOGIN) {
                         char *parse_username;
                         user_node.user_fd = (uint8_t) fds[i].fd;
+                        user_node.channel = 0;
                         add_user_element(user_linked_list[0], i - 1, user_node);
                         display_user_linked_list(user_linked_list[0]);
 
@@ -380,7 +381,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
-                                               user_node.user_fd, res->data->msg_len, res->data->msg);
+                                               user_node.user_fd, res->data->msg_len, (uint8_t *) res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                                fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
                                res->data->msg_len, res->data->msg);
@@ -399,11 +400,12 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         }
                         free(res_packet);
                         break;
-                    } else if (req->cmd_code == JOIN_CHANNEL) {
+                    }
+                    else if (req->cmd_code == JOIN_CHANNEL) {
                         char *parse_channel;
-                        printf("msg = %s\n", req->msg);
                         parse_channel = strtok(req->msg, " ");
                         parse_channel = strtok(NULL, " ");
+                        printf("New channel %s\n", parse_channel);
                         int new_channel = (int) strtol(parse_channel, NULL, 10);
 
                         if (new_channel > 65535 || new_channel < 0) {
@@ -421,13 +423,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 fds[i].fd) {
                                 target.user_fd = get_user_element(user_linked_list[res->data->channel_id],
                                                                   index_delete)->user_fd;
-                                target.user_id = get_user_element(user_linked_list[res->data->channel_id],
-                                                                  index_delete)->user_id;
-                                // Free user_id ?
+                                target.channel = (uint16_t) new_channel;
 //                                remove_user_element(user_linked_list[0], index_delete);
                             }
                             printf("target_fd = %d\n", target.user_fd);
-                            printf("target_fd = %s\n", target.user_id);
+                            printf("target_channel = %d\n", target.channel);
 
                             int index = get_user_linked_list_length(user_linked_list[new_channel]);
 //                            printf("index_get = %d\n", index);
@@ -446,13 +446,13 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 }
                             }
                             display_user_linked_list(user_linked_list[new_channel]);
-                            cpt_response_code(res, req, target.user_fd, USER_JOINED_CHANNEL);
+                            cpt_response_code(res, req, target.user_fd, JOIN_CHANNEL);
                         }
 
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
                         cpt_serialize_response(res, res_packet, res->data_size, (uint16_t) new_channel,
-                                               user_node.user_fd, res->data->msg_len, res->data->msg);
+                                               user_node.user_fd, res->data->msg_len, (uint8_t *)res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
                                fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
                                res->data->msg_len, res->data->msg);
@@ -473,23 +473,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         break;
                     }
 
-
-
-//                    if (req->version != 3) // current version
-//                    {
-//                        cpt_response_code(res, req, BAD_VERSION);
-//                        size_buf = get_size_for_serialized_response_buffer(res);
-//                        res_packet = calloc(size_buf, sizeof(uint8_t));
-//                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
-//                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-//                        if (rc < 0) {
-//                            perror("  send() failed");
-//                            close_conn = TRUE;
-//                        }
-//                        cpt_response_destroy(res);
-//                        break;
-//                    }
-//
 //                    if (req->channel_id != 0) // only checks for global channel at the moment
 //                    {
 //                        if (req->channel_id > 65535 || req->channel_id < 0) {
@@ -592,11 +575,10 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     } while (end_server == FALSE); /* End of serving running.    */
 
     /* Clean up all of the sockets that are open                 */
-    for (i = 0; i < nfds; i++) {
+    for (i = 0; i < nfds; i++)
+    {
         if (fds[i].fd >= 0)
             close(fds[i].fd);
     }
     return ret_val;
 }
-
-

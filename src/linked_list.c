@@ -160,7 +160,7 @@ void display_user_linked_list(UserLinkedList* pList) {
         printf("Current number of element: %d \n", pList->user_count);
 
         for (i = 0; i < pList->user_count; i++) {
-            printf("[%d] : %s\n", i, get_user_element(pList, i)->user_id);
+            printf("[%d] : %d\n", i, get_user_element(pList, i)->user_fd);
         }
     }
     else {

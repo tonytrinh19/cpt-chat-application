@@ -62,8 +62,16 @@ void cpt_request_chan(CptRequest *cpt, const uint16_t channel_id) {
 }
 
 void cpt_request_msg(CptRequest *cpt, const char *msg) {
-    cpt->msg = strdup(msg);
-    cpt_request_len(cpt, (uint16_t) strlen(cpt->msg));
+    if (!msg)
+    {
+        cpt->msg = NULL;
+        cpt_request_len(cpt, 0);
+    }
+    else
+    {
+        cpt->msg = strdup(msg);
+        cpt_request_len(cpt, (uint16_t) strlen(cpt->msg));
+    }
 }
 
 void cpt_request_reset(CptRequest *packet) {
