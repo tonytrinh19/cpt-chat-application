@@ -276,6 +276,10 @@ void *listeningThread(void *args) {
             printf("Something went wrong with the server\n");
             break;
         }
+        printf("INSIDE THREAD : channel_id = %d\n", current_channel);
+        printf("< Thread data >\n");
+        printf("res_code = %d\n", res->code);
+        printf("data_size = %d\n", res->data_size);
         printf("channel_id = %d\n", res->data->channel_id);
         printf("user_fd = %d\n", res->data->user_fd);
         printf("msg_len = %d\n", res->data->msg_len);
