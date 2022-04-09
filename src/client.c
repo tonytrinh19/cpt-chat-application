@@ -22,9 +22,8 @@
 
 void *listeningThread(void *args);
 
+uint8_t cmd_val(const char *cmd);
 
-
-uint8_t cmd_val(const char* cmd);
 uint16_t current_channel;
 
 
@@ -81,7 +80,7 @@ static struct dc_application_settings *create_settings(const struct dc_posix_env
     // note the trick here - we use calloc and add 1 to ensure the last line is all 0/NULL
     settings->opts.opts = dc_calloc(env, err, (sizeof(opts) / sizeof(struct options)) + 1, sizeof(struct options));
     dc_memcpy(env, settings->opts.opts, opts, sizeof(opts));
-    settings->opts.flags = "c:h:p:u:n";
+    settings->opts.flags = "c:h:p:";
     settings->opts.env_prefix = "CPT_CHAT_";
 
     return (struct dc_application_settings *) settings;
@@ -105,7 +104,7 @@ static int destroy_settings(const struct dc_posix_env *env, __attribute__ ((unus
 }
 
 
-uint8_t cmd_val(const char* cmd) {
+uint8_t cmd_val(const char *cmd) {
     if (strcmp(cmd, "SEND") == 0) return SEND;
     else if (strcmp(cmd, "LOGOUT") == 0) return LOGOUT;
     else if (strcmp(cmd, "GET_USERS") == 0) return GET_USERS;
@@ -194,7 +193,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 //            printf("this is message = %s\n", message);
             char *message_copy = strdup(message);
 
-            char* parse_message;
+            char *parse_message;
             parse_message = strtok(message_copy, " ");
             uint8_t cmd_code = cmd_val(parse_message);
             request->cmd_code = cmd_code;
@@ -204,11 +203,9 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
             if (cmd_code == 1) {    // SEND
                 request->channel_id = current_channel;
-            }
-            else if (cmd_code == 5) { // JOIN_CHANNEL
+            } else if (cmd_code == 5) { // JOIN_CHANNEL
                 request->channel_id = (uint16_t) strtol(parse_message, NULL, 10);
-            }
-            else if (cmd_code == 6) {    // LEAVE_CHANNEL
+            } else if (cmd_code == 6) {    // LEAVE_CHANNEL
                 request->channel_id = 0;
             }
             free(message_copy);
@@ -264,28 +261,23 @@ void *listeningThread(void *args) {
         printf("channel_id = %d\n", res->data->channel_id);
         printf("user_fd = %d\n", res->data->user_fd);
         printf("msg_len = %d\n", res->data->msg_len);
+
+        // When receive JOIN_CHANNEL res_cmd, change current_channel to whatever channel is being sent back
         current_channel = res->data->channel_id;
         switch (res->code) {
-            case(SEND):
-                printf("server - %s\n", res->data->msg);
+            case (SEND):
+                printf("Message sent successfully\n");
                 break;
-            case(LOGIN):
-                printf("server - %s\n", res->data->msg);
-                break;
-            case(CHANNEL_CREATED):
-                printf("server - %s\n", res->data->msg);
-                break;
-            case(CHANNEL_CREATION_ERROR):
-                printf("server - %s\n", res->data->msg);
-                break;
-            case(JOIN_CHANNEL):
-                printf("server - %s\n", res->data->msg);
-                break;
+            case (LOGIN):
+            case (CHANNEL_CREATED):
+            case (CHANNEL_CREATION_ERROR):
+            case (JOIN_CHANNEL):
             default:
-                printf("server - %s\n", res->data->msg);
+                printf("(Channel %d)%d: %s\n", res->data->channel_id, res->data->user_fd, res->data->msg);
                 break;
         }
 
+        // This shit is doing some magical things dont touch
 //        if (res->code == MESSAGE) {
 //            uint16_t first_half_channel_id = res->data->channel_id;
 //            first_half_channel_id <<= 8;
@@ -301,12 +293,14 @@ void *listeningThread(void *args) {
 //            res->data->msg++;
 //            res->data->msg++;
 //            printf("%d: %d\n", user_id, res->data->user_fd);
-//        } else if (res->code == SUCCESS) {
-//            // DO nothing
-//            printf("\n");
-//        } else {
-//            printf("%s\n", (char *) res->data);
-//        }
+//
+//            printf("%s\n", res->data->msg);
+//        } else
+        if (res->code == SEND) {
+            // DO nothing
+        } else {
+            printf("%s\n", (char *) res->data);
+        }
     }
     return NULL;
 }

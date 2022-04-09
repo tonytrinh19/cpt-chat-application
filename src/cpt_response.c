@@ -30,11 +30,12 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, 
     response->code = res_code;
 
     switch (res_code) {
-        case SEND:
+        case MESSAGE:
         {
             response->data->channel_id = request->channel_id;
             response->data->user_fd = (uint16_t) fds;
-            response->data->msg = strdup("Message sent\n");
+            // 5 for skipping "SEND "
+            response->data->msg = strdup(request->msg + 5);
             response->data->msg_len = (uint16_t) strlen(response->data->msg);
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
             break;
@@ -44,15 +45,6 @@ void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, 
             response->data->channel_id = request->channel_id;
             response->data->user_fd = (uint16_t) fds;
             response->data->msg = strdup("Login successful\n");
-            response->data->msg_len = (uint16_t) strlen(response->data->msg);
-            response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
-            break;
-        }
-        case MESSAGE:    // 8
-        {
-            response->data->channel_id = request->channel_id;
-            response->data->user_fd = (uint16_t) fds;
-            response->data->msg = strdup(request->msg);
             response->data->msg_len = (uint16_t) strlen(response->data->msg);
             response->data_size = (uint16_t) 2 + 2 + 2 + response->data->msg_len;
             break;

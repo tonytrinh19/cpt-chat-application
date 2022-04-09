@@ -112,7 +112,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
 
     // Default Channel Linked List Create
-    UserLinkedList* user_linked_list[65535];
+    UserLinkedList *user_linked_list[65535];
 
     // Default(Channel 0) User Linked List Create
     user_linked_list[0] = create_user_linked_list();
@@ -272,22 +272,25 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
 
                     printf("\n\n<CLIENT DATA>\nfds[i].fd = %d\ncmd_code = %d\nversion = %d\nchannel id = %d\nmsg_len = %d\nmsg = %s\n\n\n",
-                                fds[i].fd, req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
+                           fds[i].fd, req->cmd_code, req->version, req->channel_id, req->msg_len, req->msg);
 
 
                     user_node.user_fd = (uint8_t) fds[i].fd;
-                    if (req->cmd_code == SEND) {
-                        char* parse_message;
-                        parse_message = strtok(req->msg, " ");
-                        user_node.user_id = (uint8_t *)strdup(parse_message);
-                        display_user_linked_list(user_linked_list[0]);
 
+                    if (req->cmd_code == SEND) {
+                        char *parse_message;
+                        char *temp = strdup(req->msg);
+                        parse_message = strtok(temp, " ");
+                        user_node.user_id = (uint8_t *) strdup(parse_message);
+                        display_user_linked_list(user_linked_list[0]);
                         cpt_response_code(res, req, (uint8_t) fds[i].fd, SEND);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
+                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
+                                               user_node.user_fd, res->data->msg_len, res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
-                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
+                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
+                               res->data->msg_len, res->data->msg);
                         printf("<SEND CLIENT>\n");
                         printf("res_code = %d\n", res_packet[0]);
                         printf("data_size = %d\n", res_packet[1] + res_packet[2]);
@@ -301,24 +304,54 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                             perror("  send() failed");
                             close_conn = TRUE;
                         }
-                        free(res_packet);
+                        for (int conn = 1; conn < current_size; ++conn) {
+                            printf("inside\n");
+                            // response_code will be MESSAGE
+                            if (conn != i) {
+                                int user_id = fds[conn].fd;
+                                cpt_response_code(res, req, fds[i].fd, MESSAGE);
+                                size_buf = get_size_for_serialized_response_buffer(res);
+                                res_packet = calloc(size_buf, sizeof(uint8_t));
+                                cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
+                                                       (uint16_t) fds[i].fd, res->data->msg_len, (uint8_t *)res->data->msg);
+                                printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
+                                       fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
+                                       res->data->msg_len, res->data->msg);
+                                printf("<SEND CLIENT>\n");
+                                printf("res_code = %d\n", res_packet[0]);
+                                printf("data_size = %d\n", res_packet[1] + res_packet[2]);
+                                printf("channel_id = %d\n", res_packet[3] + res_packet[4]);
+                                printf("user_fd = %d\n", res_packet[5] + res_packet[6]);
+                                printf("msg_len = %d\n", res_packet[7] + res_packet[8]);
+                                rc = send(user_id, res_packet, size_buf, 0);
+                                if (rc < 0) {
+                                    perror("  send() failed");
+                                    close_conn = TRUE;
+                                    break;
+                                }
+                                free(res_packet);
+                            }
+                        }
+                        free(temp);
                         break;
                     }
 
                     if (req->cmd_code == LOGIN) {
-                        char* parse_username;
+                        char *parse_username;
                         parse_username = strtok(req->msg, " ");
                         parse_username = strtok(NULL, " ");
-                        user_node.user_id = (uint8_t *)strdup(parse_username);
+                        user_node.user_id = (uint8_t *) strdup(parse_username);
                         add_user_element(user_linked_list[0], i - 1, user_node);
                         display_user_linked_list(user_linked_list[0]);
 
                         cpt_response_code(res, req, (uint8_t) fds[i].fd, LOGIN);
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
+                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
+                                               user_node.user_fd, res->data->msg_len, res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
-                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
+                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
+                               res->data->msg_len, res->data->msg);
                         printf("<SEND CLIENT>\n");
                         printf("res_code = %d\n", res_packet[0]);
                         printf("data_size = %d\n", res_packet[1] + res_packet[2]);
@@ -334,26 +367,25 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         }
                         free(res_packet);
                         break;
-                    }
-
-                    else if (req->cmd_code == CREATE_CHANNEL) {
-                        char* parse_channel;
+                    } else if (req->cmd_code == CREATE_CHANNEL) {
+                        char *parse_channel;
                         parse_channel = strtok(req->msg, " ");
                         parse_channel = strtok(NULL, " ");
                         int new_channel = (int) strtol(parse_channel, NULL, 10);
                         if (new_channel > 65535 || new_channel < 0) {
                             cpt_response_code(res, req, (uint8_t) fds[i].fd, CHANNEL_CREATION_ERROR);
-                        }
-                        else {
+                        } else {
                             user_linked_list[new_channel] = create_user_linked_list();
                             cpt_response_code(res, req, (uint8_t) fds[i].fd, CHANNEL_CREATED);
                         }
 
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id, user_node.user_fd, res->data->msg_len, res->data->msg);
+                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
+                                               user_node.user_fd, res->data->msg_len, res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
-                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
+                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
+                               res->data->msg_len, res->data->msg);
                         printf("<SEND CLIENT>\n");
                         printf("res_code = %d\n", res_packet[0]);
                         printf("data_size = %d\n", res_packet[1] + res_packet[2]);
@@ -369,11 +401,8 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         }
                         free(res_packet);
                         break;
-                    }
-
-
-                    else if (req->cmd_code == JOIN_CHANNEL) {
-                        char* parse_channel;
+                    } else if (req->cmd_code == JOIN_CHANNEL) {
+                        char *parse_channel;
                         printf("msg = %s\n", req->msg);
                         parse_channel = strtok(req->msg, " ");
                         parse_channel = strtok(NULL, " ");
@@ -381,18 +410,21 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
                         if (new_channel > 65535 || new_channel < 0) {
                             cpt_response_code(res, req, (uint8_t) fds[i].fd, UKNOWN_CHANNEL);
-                        }
-                        else {
+                        } else {
                             int index_delete = 0;
 
                             UserNode target;
                             /** REMOVE USER FROM PREVIOUS CHANNEL AND ADD USER TO A NEW CHANNEL **/
-                            while (get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd != fds[i].fd) {
+                            while (get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd !=
+                                   fds[i].fd) {
                                 index_delete++;
                             }
-                            if (get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd == fds[i].fd) {
-                                target.user_fd = get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd;
-                                target.user_id = get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_id;
+                            if (get_user_element(user_linked_list[res->data->channel_id], index_delete)->user_fd ==
+                                fds[i].fd) {
+                                target.user_fd = get_user_element(user_linked_list[res->data->channel_id],
+                                                                  index_delete)->user_fd;
+                                target.user_id = get_user_element(user_linked_list[res->data->channel_id],
+                                                                  index_delete)->user_id;
                                 // Free user_id ?
 //                                remove_user_element(user_linked_list[0], index_delete);
                             }
@@ -402,14 +434,15 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                             int index = get_user_linked_list_length(user_linked_list[new_channel]);
 //                            printf("index_get = %d\n", index);
 
-                            if (index  == 0) {
+                            if (index == 0) {
                                 add_user_element(user_linked_list[new_channel], 0, target);
-                            }
-                            else {
+                            } else {
                                 for (int j = 0; j < index; j++) {
                                     if (get_user_element(user_linked_list[new_channel], j)->user_fd != target.user_fd) {
-                                        printf("user_fd = %d\n", get_user_element(user_linked_list[new_channel], j)->user_fd);
-                                        printf("target_fd = %d\n", get_user_element(user_linked_list[new_channel], j)->user_fd);
+                                        printf("user_fd = %d\n",
+                                               get_user_element(user_linked_list[new_channel], j)->user_fd);
+                                        printf("target_fd = %d\n",
+                                               get_user_element(user_linked_list[new_channel], j)->user_fd);
                                         add_user_element(user_linked_list[new_channel], index, target);
                                     }
                                 }
@@ -420,9 +453,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
                         size_buf = get_size_for_serialized_response_buffer(res);
                         res_packet = calloc(size_buf, sizeof(uint8_t));
-                        cpt_serialize_response(res, res_packet, res->data_size, (uint16_t) new_channel, user_node.user_fd, res->data->msg_len, res->data->msg);
+                        cpt_serialize_response(res, res_packet, res->data_size, (uint16_t) new_channel,
+                                               user_node.user_fd, res->data->msg_len, res->data->msg);
                         printf("\n\n<SERVER DATA>\nfds[i].fd = %d\nres_code = %d\ndata_size = %d\nchannel id = %d\nres_user_fd = %d\nmsg_len = %d\nmsg = %s\n\n\n",
-                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd, res->data->msg_len, res->data->msg);
+                               fds[i].fd, res->code, res->data_size, res->data->channel_id, res->data->user_fd,
+                               res->data->msg_len, res->data->msg);
                         printf("<SEND CLIENT>\n");
                         printf("res_code = %d\n", res_packet[0]);
                         printf("data_size = %d\n", res_packet[1] + res_packet[2]);
@@ -493,23 +528,27 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 //                        cpt_response_destroy(res);
 //                        break;
 //                    }
-//                    else {
+//                    else
+//                    {
 //                        cpt_response_code(res, req, user_node.user_fd, SUCCESS);
 //                        size_buf = get_size_for_serialized_response_buffer(res);
 //                        res_packet = calloc(size_buf, sizeof(uint8_t));
 //                        cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
 //                                               user_node.user_fd, res->data->msg_len, res->data->msg);
 //                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-//                        if (rc < 0) {
+//                        if (rc < 0)
+//                        {
 //                            perror("  send() failed");
 //                            close_conn = TRUE;
 //                            cpt_response_destroy(res);
 //                            break;
 //                        }
 //                        free(res_packet);
-//                        for (int conn = 1; conn < current_size; ++conn) {
+//                        for (int conn = 1; conn < current_size; ++conn)
+//                        {
 //                            // response_code will be MESSAGE
-//                            if (conn != i) {
+//                            if (conn != i)
+//                            {
 //                                int user_id = fds[conn].fd;
 //                                cpt_response_code(res, req, fds[i].fd, MESSAGE);
 //                                size_buf = get_size_for_serialized_response_buffer(res);
@@ -517,7 +556,8 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 //                                cpt_serialize_response(res, res_packet, res->data_size, res->data->channel_id,
 //                                                       (uint16_t) fds[i].fd, res->data->msg_len, res->data->msg);
 //                                rc = send(user_id, res_packet, size_buf, 0);
-//                                if (rc < 0) {
+//                                if (rc < 0)
+//                                {
 //                                    perror("  send() failed");
 //                                    close_conn = TRUE;
 //                                    break;
