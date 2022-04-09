@@ -149,12 +149,14 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
         serveraddr.sin6_port = htons(port);
         rc = inet_pton(AF_INET6, hostname, &serveraddr.sin6_addr.s6_addr);
 
-        if (rc != 1) {
+        if (rc != 1)
+        {
             memset(&hints, 0, sizeof(hints));
             hints.ai_family = AF_INET6;
             hints.ai_flags = AI_V4MAPPED;
             rc = getaddrinfo(hostname, NULL, &hints, &res);
-            if (rc != 0) {
+            if (rc != 0)
+            {
                 printf("Host not found! (%s)\n", hostname);
                 perror("getaddrinfo() failed\n");
                 break;
@@ -187,7 +189,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             char message[MSG_MAX_LEN];
 
             request->channel_id = current_channel;
-            printf("Inside client channel id = %d\n", request->channel_id);
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
             message[message_len] = '\0';
@@ -201,15 +202,15 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             parse_message = strtok(NULL, " ");
 
             if (cmd_code == SEND)
-            {    // SEND
+            {
                 request->channel_id = current_channel;
             }
             else if (cmd_code == JOIN_CHANNEL)
-            { // JOIN_CHANNEL
+            {
                 request->channel_id = (uint16_t) strtol(parse_message, NULL, 10);
             }
             else if (cmd_code == LEAVE_CHANNEL)
-            {    // LEAVE_CHANNEL
+            {
                 request->channel_id = 0;
             }
             free(message_copy);
@@ -218,8 +219,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             size_buf = get_size_for_serialized_request_buffer(request);
             buff = calloc(size_buf, sizeof(uint8_t));
             cpt_serialize_request(request, buff);
-            printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
-                   request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
 
             rc = send(sd, buff, size_buf, 0);
             if (rc < 0) {
@@ -229,7 +228,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             cpt_request_reset(request);
             free(buff);
         }
-
         close(sd);
     } while (FALSE);
 
@@ -244,50 +242,44 @@ void *listeningThread(void *args)
     int *sd = (int *) args;
     uint16_t channel_id;
     uint16_t user_id;
-    while (TRUE) {
+    while (TRUE)
+    {
         size_t rc;
         uint8_t buffer[MSG_MAX_LEN];
         rc = recv(*sd, buffer, sizeof(buffer), 0);
-        if (rc < 0) {
+        if (rc < 0)
+        {
             perror("recv() failed");
             break;
-        } else if (rc == 0) {
+        }
+        else if (rc == 0)
+        {
             printf("The server closed the connection\n");
             break;
         }
         buffer[rc] = '\0';
 
         CptResponse *res = cpt_parse_response(buffer, rc);
-        if (res == NULL) {
+        if (res == NULL)
+        {
             printf("Something went wrong with the server\n");
             break;
         }
-        printf("INSIDE THREAD : channel_id = %d\n", current_channel);
-        printf("< Thread data >\n");
-        printf("res_code = %d\n", res->code);
-        printf("data_size = %d\n", res->data_size);
-        printf("channel_id = %d\n", res->data->channel_id);
-        printf("user_fd = %d\n", res->data->user_fd);
-        printf("msg_len = %d\n", res->data->msg_len);
-
         // When receive JOIN_CHANNEL res_cmd, change current_channel to whatever channel is being sent back
         switch (res->code) {
-            case (SEND):
-                printf("Message sent successfully\n");
-                break;
-            case (LOGIN):
-            case (CHANNEL_CREATED):
-            case (CHANNEL_CREATION_ERROR):
-            case (JOIN_CHANNEL):
-                current_channel = res->data->channel_id;
-                break;
-            default:
-                printf("res->data->channel_id: %d\n", res->data->channel_id);
-                printf("current_channel: %d\n", current_channel);
+            case (MESSAGE):
                 if (current_channel == res->data->channel_id)
                 {
                     printf("(Channel %d)%d: %s\n", res->data->channel_id, res->data->user_fd, res->data->msg);
                 }
+                break;
+            case (SEND):
+                break;
+            case (JOIN_CHANNEL):
+                current_channel = res->data->channel_id;
+            default:
+                printf("%s\n", res->data->msg);
+
                 break;
         }
     }

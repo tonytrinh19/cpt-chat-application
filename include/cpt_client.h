@@ -18,7 +18,6 @@ struct application_settings
     struct dc_setting_uint16 *channel;
 };
 
-
 size_t get_size_for_serialized_request_buffer(const CptRequest *request);
 
 static struct dc_application_settings *create_settings(const struct dc_posix_env *env, struct dc_error *err);
