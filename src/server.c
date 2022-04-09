@@ -340,6 +340,7 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                     if (req->cmd_code == LOGIN) {
                         char *parse_username;
                         user_node.user_fd = (uint8_t) fds[i].fd;
+                        user_node.channel = 0;
                         add_user_element(user_linked_list[0], i - 1, user_node);
                         display_user_linked_list(user_linked_list[0]);
 
@@ -423,13 +424,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                                 fds[i].fd) {
                                 target.user_fd = get_user_element(user_linked_list[res->data->channel_id],
                                                                   index_delete)->user_fd;
-                                target.user_id = get_user_element(user_linked_list[res->data->channel_id],
-                                                                  index_delete)->user_id;
-                                // Free user_id ?
+                                target.channel = (uint16_t) new_channel;
 //                                remove_user_element(user_linked_list[0], index_delete);
                             }
                             printf("target_fd = %d\n", target.user_fd);
-                            printf("target_fd = %s\n", target.user_id);
+                            printf("target_channel = %d\n", target.channel);
 
                             int index = get_user_linked_list_length(user_linked_list[new_channel]);
 //                            printf("index_get = %d\n", index);
