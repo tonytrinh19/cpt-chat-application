@@ -28,5 +28,5 @@ destroy_settings(const struct dc_posix_env *env, struct dc_error *err, struct dc
 
 static int run(const struct dc_posix_env *env, struct dc_error *err, struct dc_application_settings *settings);
 
-
+void login(CptRequest *pRequest, int sd);
 #endif //TEMPLATE2_CPT_CLIENT_H

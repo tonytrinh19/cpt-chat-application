@@ -474,23 +474,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
                         break;
                     }
 
-
-
-//                    if (req->version != 3) // current version
-//                    {
-//                        cpt_response_code(res, req, BAD_VERSION);
-//                        size_buf = get_size_for_serialized_response_buffer(res);
-//                        res_packet = calloc(size_buf, sizeof(uint8_t));
-//                        cpt_serialize_response(res, res_packet, FALSE, 0, 0, 0, NULL);
-//                        rc = send(fds[i].fd, res_packet, size_buf, 0);
-//                        if (rc < 0) {
-//                            perror("  send() failed");
-//                            close_conn = TRUE;
-//                        }
-//                        cpt_response_destroy(res);
-//                        break;
-//                    }
-//
 //                    if (req->channel_id != 0) // only checks for global channel at the moment
 //                    {
 //                        if (req->channel_id > 65535 || req->channel_id < 0) {

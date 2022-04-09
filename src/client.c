@@ -26,7 +26,6 @@ uint8_t cmd_val(const char *cmd);
 
 uint16_t current_channel;
 
-
 int main(int argc, char *argv[]) {
     dc_posix_tracer tracer;
     dc_error_reporter reporter;
@@ -129,18 +128,19 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     struct addrinfo hints, *res;
     pthread_t thread_id;
     CptRequest *request = cpt_request_init();
+    size_t size_buf;
+    uint8_t *buff;
 
     app_settings = (struct application_settings *) settings;
+    hostname     = dc_setting_string_get(env, app_settings->hostname);
+    port         = dc_setting_uint16_get(env, app_settings->port);
+    ret_val      = 0;
 
-    hostname = dc_setting_string_get(env, app_settings->hostname);
-    port = dc_setting_uint16_get(env, app_settings->port);
-
-    ret_val = 0;
-
-    // My program
-    do {
+    do
+    {
         sd = socket(AF_INET6, SOCK_STREAM, 0);
-        if (sd < 0) {
+        if (sd < 0)
+        {
             perror("socket() failed");
             break;
         }
@@ -178,27 +178,11 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
         pthread_create(&thread_id, NULL, listeningThread, (void *) &sd);
 
         // LOGIN
-        request->cmd_code = LOGIN;
-        request->version = 3;
-        request->channel_id = 0;
-        size_t size_buf = get_size_for_serialized_request_buffer(request);
-        uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
-        cpt_serialize_request(request, buff);
-        printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
-               request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
-
-        rc = send(sd, buff, size_buf, 0);
-        if (rc < 0) {
-            perror("send() failed");
-            break;
-        }
-        cpt_request_reset(request);
-        free(buff);
-
-
+        login(request, sd);
 
         // An infinite loop that listens for user's keyboard and send the message
-        while (TRUE) {
+        while (TRUE)
+        {
             // Take input from client and send it to the server
             request->version = 3; // Version 3
             char message[MSG_MAX_LEN];
@@ -208,7 +192,6 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
             ssize_t message_len;
             message_len = read(STDIN_FILENO, message, MSG_MAX_LEN);
             message[message_len] = '\0';
-//            printf("this is message = %s\n", message);
             char *message_copy = strdup(message);
 
             char *parse_message;
@@ -218,19 +201,23 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
 
             parse_message = strtok(NULL, " ");
 
-
-            if (cmd_code == 1) {    // SEND
+            if (cmd_code == SEND)
+            {    // SEND
                 request->channel_id = current_channel;
-            } else if (cmd_code == 5) { // JOIN_CHANNEL
+            }
+            else if (cmd_code == JOIN_CHANNEL)
+            { // JOIN_CHANNEL
                 request->channel_id = (uint16_t) strtol(parse_message, NULL, 10);
-            } else if (cmd_code == 6) {    // LEAVE_CHANNEL
+            }
+            else if (cmd_code == LEAVE_CHANNEL)
+            {    // LEAVE_CHANNEL
                 request->channel_id = 0;
             }
             free(message_copy);
             cpt_request_msg(request, message);
 
-            size_t size_buf = get_size_for_serialized_request_buffer(request);
-            uint8_t *buff = calloc(size_buf, sizeof(uint8_t));
+            size_buf = get_size_for_serialized_request_buffer(request);
+            buff = calloc(size_buf, sizeof(uint8_t));
             cpt_serialize_request(request, buff);
             printf("\n\n<Client Data Confirmation>\ncommand_code = %d\nversion = %d\nchannel_id = %d\nmsg_len = %d\nmsg = %s\n\n",
                    request->cmd_code, request->version, request->channel_id, request->msg_len, request->msg);
@@ -253,8 +240,8 @@ static int run(const struct dc_posix_env *env, __attribute__ ((unused)) struct d
     return ret_val;
 }
 
-
-void *listeningThread(void *args) {
+void *listeningThread(void *args)
+{
     int *sd = (int *) args;
     uint16_t channel_id;
     uint16_t user_id;
@@ -303,31 +290,6 @@ void *listeningThread(void *args) {
                     printf("(Channel %d)%d: %s\n", res->data->channel_id, res->data->user_fd, res->data->msg);
                 }
                 break;
-        }
-
-        // This shit is doing some magical things dont touch
-//        if (res->code == MESSAGE) {
-//            uint16_t first_half_channel_id = res->data->channel_id;
-//            first_half_channel_id <<= 8;
-//            uint16_t second_half_channel_id = res->data->channel_id;
-//            channel_id = first_half_channel_id | second_half_channel_id;
-//
-//            uint16_t first_half_user_id = res->data->user_fd;
-//            first_half_user_id <<= 8;
-//            uint16_t second_half_user_id = res->data->user_fd;
-//            user_id = first_half_user_id | second_half_user_id;
-//
-//            // Skips the msg_len for now
-//            res->data->msg++;
-//            res->data->msg++;
-//            printf("%d: %d\n", user_id, res->data->user_fd);
-//
-//            printf("%s\n", res->data->msg);
-//        } else
-        if (res->code == SEND) {
-            // DO nothing
-        } else {
-            printf("%s\n", (char *) res->data);
         }
     }
     return NULL;
