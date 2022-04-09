@@ -6,40 +6,24 @@
 
 #include <stdbool.h>
 #include "cpt_request_builder.h"
+#include "linked_list.h"
+
 #define GLOBAL_CHANNEL 0
+
+typedef struct cpt_sub_packet {
+    uint16_t channel_id;
+    uint16_t user_fd;
+    uint16_t msg_len;
+    char* msg;
+} CptSubPacket;
 
 typedef struct cpt_response {
     uint8_t code;
     uint16_t data_size;
-    uint8_t *data;
+    CptSubPacket *data;
 } CptResponse;
 
-enum server_res_code {
-    MESSAGE = 8,
-    USER_CONNECTED,
-    USER_DISCONNECTED,
-    MESSAGE_FAILED,
-    CHANNEL_CREATED,
-    CHANNEL_CREATION_ERROR,
-    CHANNEL_DESTROYED,
-    USER_JOINED_CHANNEL,
-    USER_LEFT_CHANNEL,
-    USER_LIST,
-    UKNOWN_CMD,
-    LOGIN_FAIL,
-    UKNOWN_CHANNEL,
-    BAD_VERSION,
-    SEND_FAILED,
-    CHAN_ID_OVERFLOW,
-    MSG_OVERFLOW,
-    MSG_LEN_OVERFLOW,
-    CHAN_EMPTY,
-    INVALID_ID,
-    UNAUTH_ACCESS,
-    SERVER_FULL
-};
-
-void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t res_code);
+void cpt_response_code(CptResponse *response, CptRequest *request, uint8_t fds, uint8_t res_code);
 
 /**
  * Initialize CptResponse server-side packet.
@@ -82,7 +66,7 @@ void cpt_response_reset(CptResponse *response);
 * @param buffer A pointer that will store serialized string
 * @return       Size of the serialized packet.
 */
-void cpt_serialize_response(CptResponse *res, uint8_t *buffer, bool hasSubPacket, uint16_t channel_id, uint16_t user_id, uint16_t msg_len, uint8_t *msg);
+size_t cpt_serialize_response(CptResponse *res, uint8_t *buffer, uint16_t data_size, uint16_t channel_id, uint16_t user_id, uint16_t msg_len, uint8_t *msg);
 
 /**
 * Create a cpt struct from a cpt packet.

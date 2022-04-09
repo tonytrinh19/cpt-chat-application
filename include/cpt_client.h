@@ -13,10 +13,11 @@ struct application_settings
     struct dc_opt_settings opts;
     struct dc_setting_string *hostname;
     struct dc_setting_uint16 *port;
+    struct dc_setting_string *cmd;
     struct dc_setting_string *username;
+    struct dc_setting_uint16 *channel;
 };
 
-void *listeningThread(void *args);
 
 size_t get_size_for_serialized_request_buffer(const CptRequest *request);
 
@@ -27,6 +28,6 @@ destroy_settings(const struct dc_posix_env *env, struct dc_error *err, struct dc
 
 static int run(const struct dc_posix_env *env, struct dc_error *err, struct dc_application_settings *settings);
 
-void login(CptRequest *request, int fd);
+void login(CptRequest *request, int sd);
 
 #endif //TEMPLATE2_CPT_CLIENT_H

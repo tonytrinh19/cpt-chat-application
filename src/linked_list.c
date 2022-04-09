@@ -38,7 +38,7 @@ int add_user_element(UserLinkedList *pList, int position, UserNode element) {
 
                 pPreNode = &(pList->header_node);
                 for (i = 0; i < position; i++) {
-                    pPreNode = (ChannelNode *) pPreNode->next;
+                    pPreNode = (UserNode *) pPreNode->next;
                 }
 
                 pNewNode->next = pPreNode->next;
@@ -49,12 +49,12 @@ int add_user_element(UserLinkedList *pList, int position, UserNode element) {
                 ret = TRUE;
             }
             else {
-                printf("ERROR: Memory allocation failed : addLLElement()\n");
+                printf("ERROR: Memory allocation failed : add_user_element()\n");
                 return ret;
             }
         }
         else {
-            printf("ERROR: [%d] Index out of rage: addLLElement()\n", position);
+            printf("ERROR: [%d] Index out of rage: add_user_element()\n", position);
         }
     }
     return ret;
@@ -153,149 +153,34 @@ int is_user_linked_list_empty(UserLinkedList * pList) {
 }
 
 
-// Channel Linked List
-ChannelLinkedList* create_channel_linked_list() {
-    ChannelLinkedList *pReturn = NULL;
-    pReturn = (ChannelLinkedList *)malloc(sizeof(ChannelLinkedList));
+void display_user_linked_list(UserLinkedList* pList) {
+    int i = 0;
 
-    if (pReturn != NULL) {
-        memset(pReturn, 0, sizeof(ChannelLinkedList));
+    if (pList != NULL) {
+        printf("Current number of element: %d \n", pList->user_count);
+
+        for (i = 0; i < pList->user_count; i++) {
+            printf("[%d] : %d\n", i, get_user_element(pList, i)->user_fd);
+        }
     }
-
     else {
-        printf("ERROR: Memory allocation failed.\n");
-        return NULL;
-    }
-
-    return pReturn;
-}
-
-
-
-int add_channel_element(ChannelLinkedList *pList, int position, ChannelNode element) {
-    int ret = FALSE;
-    int i = 0;
-    ChannelNode *pPreNode = NULL;
-    ChannelNode *pNewNode = NULL;
-
-    if (pList != NULL) {
-        if (position >= 0 && position <= pList->channel_count) {
-            pNewNode = (ChannelNode *)malloc(sizeof(ChannelNode));
-            if (pNewNode != NULL) {
-                *pNewNode = element;
-                pNewNode->next = NULL;
-
-                pPreNode = &(pList->headerNode);
-                for (i = 0; i < position; i++) {
-                    pPreNode = (ChannelNode *) pPreNode->next;
-                }
-
-                pNewNode->next = pPreNode->next;
-                pPreNode->next = pNewNode;
-
-                pList->channel_count++;
-
-                ret = TRUE;
-            }
-            else {
-                printf("ERROR: Memory allocation failed : add_channel_element()\n");
-                return ret;
-            }
-        }
-        else {
-            printf("ERROR: [%d] Index out of rage: add_channel_element()\n", position);
-        }
-    }
-    return ret;
-}
-
-
-int remove_channel_element (ChannelLinkedList *pList, int position) {
-    int ret = FALSE;
-    int i = 0;
-    int arrayCount = 0;
-    UserNode *pPreNode = NULL;
-    UserNode *pDelNode = NULL;
-
-    if (pList != NULL) {
-        arrayCount = get_user_linked_list_length(pList);
-        if (position >= 0 && position < arrayCount) {
-            pPreNode = &(pList->headerNode);
-            for (i = 0; i < position; i++) {
-                pPreNode = pPreNode->next;
-            }
-
-            pDelNode = pPreNode->next;
-            pPreNode->next = pDelNode->next;
-            free(pDelNode);
-
-            pList->channel_count--;
-
-            ret = TRUE;
-        }
-        else {
-            printf("ERROR: [%d] Index out of rage: remove_channel_element()\n", position);
-        }
-    }
-
-    return ret;
-}
-
-
-ChannelNode* get_channel_element(ChannelLinkedList *pList, int position) {
-    ChannelNode *pReturn = NULL;
-    ChannelNode *pNode = NULL;
-
-    if (pList != NULL) {
-        if (position >= 0 && position < pList->channel_count) {
-            pNode = &(pList->headerNode);
-            for (int i = 0; i <= position; i++) {
-                pNode = pNode->next;
-            }
-            pReturn = pNode;
-        }
-    }
-    return pReturn;
-}
-
-
-void delete_channel_linked_list(ChannelLinkedList *pList) {
-    int i = 0;
-
-    if (pList != NULL) {
-        clear_channel_linked_list(pList);
-        free(pList);
+        printf("No element.\n");
     }
 }
 
 
-void clear_channel_linked_list(ChannelLinkedList *pList) {
-    if (pList != NULL) {
-        if(pList->channel_count > 0) {
-            remove_channel_element(pList, 0);
+int search(UserNode * head, uint8_t user_fd) {
+    int index = 0;
+    while (head) {
+        if (head->user_fd == user_fd) {
+            return index;
+        } else {
+            head = head->next;
+            index++;
         }
     }
 }
 
 
-int get_channel_linked_list_length(ChannelLinkedList *pList) {
-    int ret = 0;
-
-    if (pList != NULL) {
-        ret = pList->channel_count;
-    }
-
-    return ret;
-}
 
 
-int is_channel_linked_list_empty(ChannelLinkedList * pList) {
-    int ret = FALSE;
-
-    if (pList != NULL) {
-        if (pList->channel_count== 0) {
-            ret = TRUE;
-        }
-    }
-    return ret;
-}
