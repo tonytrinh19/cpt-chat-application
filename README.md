@@ -1,3 +1,10 @@
+## Pre Setup
+
+This program will run using DC libraries. DC libraries provide error handling, and error reporting for your POSIX application.
+
+So clone this repository -> [dc_scripts](https://github.com/bcitcstdatacomm/dc_scripts). After that, `cd` into dc_scripts folder and run
+`./dc-update work gcc g++` This will install all dc libraries in your folder called work. If you'd like to update your libraries, simply go to dc_scripts folder and run `./dc-update work` to update the libraries.
+
 ## Setup
 ```
 mkdir cmake-build-debug
