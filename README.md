@@ -1,5 +1,9 @@
 A concurrent chat server program that implements a custom application layer protocol.
 
+Details:
+Implements an original application layer chat protocol called CPT
+CPT protocol and full API documentation can be found in the CPT-documentation/ folder at the project root
+Application must be run on POSIX compliant machines. To run, build to folder called "cmake-build-debug", then use (example):
 
 ## Table of Contents
 
