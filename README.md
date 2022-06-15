@@ -1,3 +1,14 @@
+A concurrent chat server program that implements a custom application layer protocol.
+
+
+## Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Pre Setup](#pre-setup)
+- [Setup](#setup)
+- [Source Code Additions](#source-code-additions)
+- [Build](#build)
+
 ## Pre Setup
 
 This program will run using DC libraries. DC libraries provide error handling, and error reporting for your POSIX application.
